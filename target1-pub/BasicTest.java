@@ -75,6 +75,19 @@ public class BasicTest
         v4 = v1.f;
     }
 
+    static void fun6(int i)
+    {
+        Object t1 = null;
+        Object t2 = new Object();
+        Object t3 = null;
+        if (i>10) {
+        t3 = t1;
+        } else {
+        t3 = t2;
+        }
+        t3.toString();
+    }
+
     public static void main(String args[])
     {
         
