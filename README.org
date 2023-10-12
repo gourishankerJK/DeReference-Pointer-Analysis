@@ -1,4 +1,4 @@
-* PAV2023 Course Project
+* PAV2023 Course Project Part 1
 
     The project builds a tool to statically perform a points-to
     analysis for the JAVA programs.
