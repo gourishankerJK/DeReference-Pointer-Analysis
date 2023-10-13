@@ -1,13 +1,16 @@
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javafx.scene.effect.Light.Point;
 import soot.jimple.Stmt;
 
 public class PointerLatticeElement implements LatticeElement {
+
+    private HashMap<String, Set<String>> State;
 
     /// Some functions that we may use
     public static <T> Set<T> set_merge(Set<T> set_1, Set<T> set_2) {
@@ -16,14 +19,23 @@ public class PointerLatticeElement implements LatticeElement {
         return my_set;
     }
 
-    private HashMap<String, Set<String>> State;
+    // Initialize all the keys so that number of keys is know apriori
+    public PointerLatticeElement(List<String> variables) {
+        System.out.println("Input to consturction: " + variables.toString());
+        for (String val : variables) {
+            this.State.put(val, new HashSet<String>());
+        }
+    }
+
+    public PointerLatticeElement(HashMap<String, Set<String>> state) {
+        this.State = state;
+    }
+
+    public PointerLatticeElement() {
+    }
 
     public HashMap<String, Set<String>> getState() {
         return this.State;
-    }
-
-    public void setState(HashMap<String, Set<String>> state) {
-        this.State = state;
     }
 
     public void printState() {
@@ -40,17 +52,15 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement join_op(LatticeElement r) {
-        HashMap<String, Set<String>> input = ((PointerLatticeElement) r).getState();
-
-        HashMap<String, Set<String>> joinElementState = new HashMap<String, Set<String>>();
+        HashMap<String, Set<String>> input = ((PointerLatticeElement) r).getState(),
+                joinElementState = new HashMap<String, Set<String>>();
 
         for (String key : input.keySet()) {
             joinElementState.put(key, set_merge(this.State.get(key), input.get(key)));
         }
-        PointerLatticeElement joinE = new PointerLatticeElement();
-        joinE.setState(joinElementState);
+        PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
 
-        return (LatticeElement) joinE;
+        return (LatticeElement) joinElement;
 
     }
 
