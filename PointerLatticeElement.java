@@ -1,28 +1,33 @@
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javafx.scene.effect.Light.Point;
+import java.util.HashSet;
 import soot.jimple.Stmt;
+import java.util.HashMap;
 
 public class PointerLatticeElement implements LatticeElement {
 
     /// Some functions that we may use
-    public static <T> Set<T> set_merge(Set<T> set_1, Set<T> set_2) {
-        Set<T> my_set = set_1.stream().collect(Collectors.toSet());
-        my_set.addAll(set_2);
-        return my_set;
+    // construtor
+    private HashMap<String, HashSet<String>> State;
+
+    public PointerLatticeElement() {
+        this.State = new HashMap<String, HashSet<String>>();
     }
 
-    private HashMap<String, Set<String>> State;
+    public PointerLatticeElement(String[] variables) {
+        for (String variable : variables) {
+            HashSet<String> g = new HashSet<String>();
+            this.State.put(variable, g);
+        }
+    }
 
-    public HashMap<String, Set<String>> getState() {
+    public PointerLatticeElement(HashMap<String, HashSet<String>> state) {
+        this.State = state;
+    }
+
+    public HashMap<String, HashSet<String>> getState() {
         return this.State;
     }
 
-    public void setState(HashMap<String, Set<String>> state) {
+    public void setState(HashMap<String, HashSet<String>> state) {
         this.State = state;
     }
 
@@ -33,30 +38,32 @@ public class PointerLatticeElement implements LatticeElement {
             for (String value : this.State.get(key)) {
                 System.out.print(value + ",");
             }
-            System.out.print("}} , \n");
+            System.out.print("}},");
         }
         System.out.print("}");
     }
 
     @Override
     public LatticeElement join_op(LatticeElement r) {
-        HashMap<String, Set<String>> input = ((PointerLatticeElement) r).getState();
+        HashMap<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
 
-        HashMap<String, Set<String>> joinElementState = new HashMap<String, Set<String>>();
+        HashMap<String, HashSet<String>> joinElementState = new HashMap<String, HashSet<String>>();
 
         for (String key : input.keySet()) {
-            joinElementState.put(key, set_merge(this.State.get(key), input.get(key)));
+            HashSet<String> value = new HashSet<String>();
+            value.addAll(input.get(key));
+            value.addAll(this.State.get(key));
+            joinElementState.put(key, value);
         }
         PointerLatticeElement joinE = new PointerLatticeElement();
         joinE.setState(joinElementState);
-
         return (LatticeElement) joinE;
 
     }
 
     @Override
     public boolean equals(LatticeElement r) {
-        HashMap<String, Set<String>> input = ((PointerLatticeElement) r).getState();
+        HashMap<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
         for (String key : input.keySet()) {
             if (!this.State.get(key).equals(input.get(key)))
                 return false;
