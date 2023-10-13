@@ -1,7 +1,6 @@
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,18 +11,17 @@ public class PointerLatticeElement implements LatticeElement {
 
     private HashMap<String, Set<String>> State;
 
-    /// Some functions that we may use
-    public static <T> Set<T> set_merge(Set<T> set_1, Set<T> set_2) {
+    // Utility function to merge 2 sets
+    private static <T> Set<T> set_merge(Set<T> set_1, Set<T> set_2) {
         Set<T> my_set = set_1.stream().collect(Collectors.toSet());
         my_set.addAll(set_2);
         return my_set;
     }
 
-    // Initialize all the keys so that number of keys is know apriori
     public PointerLatticeElement(List<String> variables) {
-        System.out.println("Input to consturction: " + variables.toString());
+        this.State = new HashMap<>();
         for (String val : variables) {
-            this.State.put(val, new HashSet<String>());
+            this.State.put(val, new HashSet<>());
         }
     }
 
@@ -39,15 +37,12 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     public void printState() {
-        System.out.print("{");
         for (String key : this.State.keySet()) {
-            System.out.print("{" + key + ":{");
-            for (String value : this.State.get(key)) {
-                System.out.print(value + ",");
-            }
-            System.out.print("}} , \n");
+            System.out.print(key + " :");
+            System.out.println(this.State.get(key).toString());
         }
-        System.out.print("}");
+        System.out.println();
+
     }
 
     @Override
