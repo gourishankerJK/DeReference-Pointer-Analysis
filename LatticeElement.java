@@ -1,12 +1,16 @@
 import soot.jimple.Stmt;
 
 
-// Receiver vect of LatticeElement possess the existing dataflow fact at a programpoint.
+// Receiver object of LatticeElement possess the existing dataflow
+// fact at a programpoint.  x.join(y), here x, y are elements of type,
+// LatticeElement and x is the receiver object.
 
-// Method implementation should not modify the receiver vect. A fresh vect should be returned.
+// Method implementation should not modify the receiver object. A fresh
+// object should be returned.
 
-// The Kildall implementation should not directly refer to IA implementation,
-//    and should access the dataflow data only via LatticeElement interface.
+// Killdall's algorithm should access the dataflow facts only as type
+// LatticeElement and should work on any implementation of
+// LatticElement for any analysis.
 
 interface LatticeElement
 {

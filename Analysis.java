@@ -93,7 +93,7 @@ public class Analysis extends PAVBase {
             printInfo(targetMethod);
             /*************************************************************
              * XXX This would be a good place to call the function
-             * which performs the Kildalls com.pointeranalysis.Analysis
+             * which performs the Kildalls iterations over the LatticeElement.
              *************************************************************/
             drawMethodDependenceGraph(targetMethod);
         } else {
