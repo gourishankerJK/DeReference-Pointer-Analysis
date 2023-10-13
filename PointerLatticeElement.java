@@ -27,20 +27,13 @@ public class PointerLatticeElement implements LatticeElement {
         return this.State;
     }
 
-    public void setState(HashMap<String, HashSet<String>> state) {
-        this.State = state;
-    }
-
     public void printState() {
-        System.out.print("{");
         for (String key : this.State.keySet()) {
-            System.out.print("{" + key + ":{");
-            for (String value : this.State.get(key)) {
-                System.out.print(value + ",");
-            }
-            System.out.print("}},");
+            System.out.print(key + " :");
+            System.out.println(this.State.get(key).toString());
         }
-        System.out.print("}");
+        System.out.println();
+
     }
 
     @Override
@@ -55,10 +48,9 @@ public class PointerLatticeElement implements LatticeElement {
             value.addAll(this.State.get(key));
             joinElementState.put(key, value);
         }
-        PointerLatticeElement joinE = new PointerLatticeElement();
-        joinE.setState(joinElementState);
-        joinE.printState();
-        return (LatticeElement) joinE;
+        PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
+
+        return (LatticeElement) joinElement;
 
     }
 
