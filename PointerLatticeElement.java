@@ -1,9 +1,6 @@
 import java.util.HashSet;
 import soot.jimple.Stmt;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PointerLatticeElement implements LatticeElement {
 
@@ -60,6 +57,7 @@ public class PointerLatticeElement implements LatticeElement {
         }
         PointerLatticeElement joinE = new PointerLatticeElement();
         joinE.setState(joinElementState);
+        joinE.printState();
         return (LatticeElement) joinE;
 
     }
