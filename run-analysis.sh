@@ -11,6 +11,3 @@ set -e
 
 # XXX you can add / delete / comment / uncomment lines below
 ./run-analysis-one.sh "./target1-pub" "BasicTest"   "BasicTest"   "fun1"
-./run-analysis-one.sh "./target1-pub" "BasicTest"   "BasicTest"   "fun2"
-./run-analysis-one.sh "./target1-pub" "BasicTest"   "BasicTest"   "fun3"
-./run-analysis-one.sh "./target1-pub" "BasicTest"   "BasicTest"   "fun4"
