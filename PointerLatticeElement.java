@@ -1,6 +1,9 @@
 import java.util.HashSet;
 import soot.jimple.Stmt;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PointerLatticeElement implements LatticeElement {
 
