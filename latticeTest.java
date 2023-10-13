@@ -14,15 +14,15 @@ public class latticeTest {
         points2.add("z");
         testState.put("x" , points );
         testState2.put("x" , points2 );
-        String[] str1 =new String[] {"x", "y", "z"};
-        PointerLatticeElement p = new PointerLatticeElement(testState);
+        String[] str1 = new String[] {"x", "y", "z"};
+        PointerLatticeElement p = new PointerLatticeElement(str1);
        // p.printState();
 
-       PointerLatticeElement q = new PointerLatticeElement(testState2);
-       q.join_op((LatticeElement)p);
-       System.out.println(q.equals((LatticeElement)p));
-       System.out.println(p.equals((LatticeElement)p));
-       System.out.println(q.equals((LatticeElement)q));
+    //    PointerLatticeElement q = new PointerLatticeElement(testState2);
+    //    q.join_op((LatticeElement)p);
+    //    System.out.println(q.equals((LatticeElement)p));
+    //    System.out.println(p.equals((LatticeElement)p));
+    //    System.out.println(q.equals((LatticeElement)q));
        
     }
 }

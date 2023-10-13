@@ -1,6 +1,7 @@
 import java.util.HashSet;
 import soot.jimple.Stmt;
 import java.util.HashMap;
+import java.util.List;
 
 public class PointerLatticeElement implements LatticeElement {
 
@@ -12,10 +13,10 @@ public class PointerLatticeElement implements LatticeElement {
         this.State = new HashMap<String, HashSet<String>>();
     }
 
-    public PointerLatticeElement(String[] variables) {
+    public PointerLatticeElement(List<String> variables) {
+        this.State = new HashMap<>();
         for (String variable : variables) {
-            HashSet<String> g = new HashSet<String>();
-            this.State.put(variable, g);
+            this.State.put(variable, new HashSet<>());
         }
     }
 
