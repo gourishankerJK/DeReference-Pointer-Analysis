@@ -1,20 +1,19 @@
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import soot.Body;
 import soot.Unit;
-import soot.Value;
 import soot.ValueBox;
-import soot.jimple.AssignStmt;
-import soot.jimple.Jimple;
 import soot.jimple.Stmt;
-import soot.jimple.StringConstant;
-import soot.jimple.internal.JAssignStmt;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.toolkits.graph.UnitGraph;
 
 public class Kildall {
+
+    HashMap<Integer, String> lineNumberMap = new HashMap<>();
 
     public List<ProgramPoint> ComputeLFP(Body body) {
         List<ProgramPoint> programPoints = new ArrayList<ProgramPoint>();
@@ -64,7 +63,7 @@ public class Kildall {
 
         }
         for (ProgramPoint pp : programPoints) {
-            pp.print();
+            pp.print(lineNumberMap);
         }
         return programPoints;
 
@@ -97,9 +96,11 @@ public class Kildall {
         return null;
     }
 
-    public static List<String> GetVariables(Body body) {
+    public List<String> GetVariables(Body body) {
         List<String> result = new ArrayList<String>();
+        int lineNumber = 0;
         for (Unit unit : body.getUnits()) {
+            lineNumberMap.put(unit.hashCode(), "new" + String.format("%02d", lineNumber++));
             for (ValueBox vBox : unit.getDefBoxes()) {
                 // only consider variables of the reference types -- ASSUMPTION
                 if (vBox.getValue().getType().getClass().equals(soot.RefType.class)) {

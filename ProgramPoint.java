@@ -1,3 +1,5 @@
+import java.util.HashMap;
+
 import soot.jimple.Stmt;
 
 public class ProgramPoint {
@@ -13,14 +15,24 @@ public class ProgramPoint {
         this.markedForPropagation = markedForPropagation;
     }
 
-    public void print() {
+    public void print(HashMap<Integer, String> map) {
         PointerLatticeElement e = (PointerLatticeElement) this.latticeElement;
         System.out.println(stmt.getClass().getName());
-        System.out.println(stmt.hashCode());
         for (String key : e.getState().keySet()) {
-            if (!e.getState().get(key).isEmpty())
-                System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "
-                        + e.getState().get(key).toString());
+            String lv = key;
+            for (Integer k : map.keySet()) {
+                if (key.contains(k.toString()))
+                    lv = lv.replace(k.toString(), map.get(k).toString());
+            }
+            if (!e.getState().get(key).isEmpty()) {
+                String rv = e.getState().get(key).toString();
+                for (Integer k : map.keySet()) {
+                    if (rv.contains(k.toString()))
+                        rv = rv.replace(k.toString(), map.get(k).toString());
+                }
+                System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + lv + " : "
+                        + rv);
+            }
         }
         // "markedForPropagation : " + markedForPropagation +
         System.out.println();

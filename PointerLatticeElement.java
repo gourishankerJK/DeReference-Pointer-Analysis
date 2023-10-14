@@ -100,7 +100,6 @@ public class PointerLatticeElement implements LatticeElement {
             String baseClass = ((JInstanceFieldRef) lhs).getBase().toString();
             for (String val : this.State.get(baseClass)) {
                 String key = val + "." + ((JInstanceFieldRef) lhs).getField().getName();
-                HashSet<String> set = new HashSet<>();
                 if (rhs.getClass().equals(JNewExpr.class))
                     this.State.put(key, this.State.get(rhs.toString()));
                 else
