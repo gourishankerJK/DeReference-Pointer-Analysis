@@ -1,7 +1,12 @@
 import java.util.HashSet;
 
+import soot.UnitBox;
 import soot.ValueBox;
+import soot.jimple.AssignStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
+import soot.jimple.TableSwitchStmt;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -69,8 +74,20 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        if (st.getDefBoxes().isEmpty())
+        // no actual assignments happening example virtual invoke
+        if (st.getDefBoxes().isEmpty()) {
             return this;
+        }
+        System.out.println("getLeftOp: " + ((AssignStmt) st).getLeftOp().toString());
+        System.out.println("getRightOp: " + ((AssignStmt) st).getRightOp().getClass().toString());
+        // Idenitty for static class
+        if (((AssignStmt) st).getRightOp().getClass().equals(soot.jimple.StaticFieldRef.class))
+            return this;
+        // Identity for primitives
+        for (ValueBox v : st.getDefBoxes()) {
+            if (!v.getValue().getType().getClass().equals(soot.RefType.class))
+                return this;
+        }
         String lhs = st.getDefBoxes().get(0).getValue().toString();
         for (ValueBox v : st.getUseBoxes()) {
             String rhs = v.getValue().toString();
@@ -83,6 +100,10 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         // TODO Auto-generated method stub
+        if (st.getClass().equals(TableSwitchStmt.class))
+            System.out.println("tableswitch: " + ((TableSwitchStmt) st).getKey().toString());
+        else if (st.getClass().equals(IfStmt.class))
+            System.out.println("tf_condstmt: " + ((IfStmt) st).getCondition().toString());
         return this;
     }
 
