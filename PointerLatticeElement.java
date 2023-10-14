@@ -71,7 +71,6 @@ public class PointerLatticeElement implements LatticeElement {
     public LatticeElement tf_assignstmt(Stmt st) {
         if (st.getDefBoxes().isEmpty())
             return this;
-        System.out.println("tf_assig : " + st.toString());
         String lhs = st.getDefBoxes().get(0).getValue().toString();
         for (ValueBox v : st.getUseBoxes()) {
             String rhs = v.getValue().toString();
@@ -84,7 +83,7 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'tf_condstmt'");
+        return this;
     }
 
 }

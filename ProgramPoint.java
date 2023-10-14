@@ -16,8 +16,9 @@ public class ProgramPoint {
     public void print() {
         PointerLatticeElement e = (PointerLatticeElement) this.latticeElement;
         for (String key : e.getState().keySet()) {
-            System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "
-                    + e.getState().get(key).toString());
+            if (!e.getState().get(key).isEmpty())
+                System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "
+                        + e.getState().get(key).toString());
         }
         System.out.println("markedForPropagation : " + markedForPropagation + "\n");
     }

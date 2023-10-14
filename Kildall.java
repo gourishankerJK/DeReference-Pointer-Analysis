@@ -30,6 +30,8 @@ public class Kildall {
             analysisPoint.markedForPropagation = false;
             int i = 0;
 
+            System.out.println("Analysing: " + analysisPoint.stmt.toString());
+
             for (ProgramPoint successor : GetSuccessors(analysisPoint, programPoints,
                     cfg)) {
                 LatticeElement joinElement;
