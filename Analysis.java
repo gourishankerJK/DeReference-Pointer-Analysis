@@ -87,7 +87,8 @@ public class Analysis extends PAVBase {
 
         if (methodFound) {
             printInfo(targetMethod);
-            Kildall.ComputeLFP(targetMethod.getActiveBody());
+            Kildall kildall = new Kildall();
+            kildall.ComputeLFP(targetMethod.getActiveBody());
             /*************************************************************
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
