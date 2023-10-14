@@ -15,6 +15,8 @@ public class ProgramPoint {
 
     public void print() {
         PointerLatticeElement e = (PointerLatticeElement) this.latticeElement;
+        System.out.println(stmt.getClass().getName());
+        System.out.println(stmt.hashCode());
         for (String key : e.getState().keySet()) {
             if (!e.getState().get(key).isEmpty())
                 System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "

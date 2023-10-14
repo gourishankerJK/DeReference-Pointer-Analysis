@@ -1,17 +1,19 @@
 import java.util.HashSet;
 
 import soot.UnitBox;
+import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
+import soot.jimple.internal.JInstanceFieldRef;
+import soot.jimple.internal.JNewExpr;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class PointerLatticeElement implements LatticeElement {
-
     /// Some functions that we may use
     // construtor
     private HashMap<String, HashSet<String>> State;
@@ -53,7 +55,8 @@ public class PointerLatticeElement implements LatticeElement {
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
-            value.addAll(this.State.get(key));
+            if (this.State.containsKey(key))
+                value.addAll(this.State.get(key));
             joinElementState.put(key, value);
         }
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -78,8 +81,10 @@ public class PointerLatticeElement implements LatticeElement {
         if (st.getDefBoxes().isEmpty()) {
             return this;
         }
-        System.out.println("getLeftOp: " + ((AssignStmt) st).getLeftOp().toString());
-        System.out.println("getRightOp: " + ((AssignStmt) st).getRightOp().getClass().toString());
+        System.out.println("getLeftOp: " + ((AssignStmt) st).getLeftOp().toString() + " type: "
+                + ((AssignStmt) st).getLeftOp().getClass().toString());
+        System.out.println("getRightOp: " + ((AssignStmt) st).getRightOp().getClass().toString() + " type: "
+                + ((AssignStmt) st).getRightOp().getType().toString());
         // Idenitty for static class
         if (((AssignStmt) st).getRightOp().getClass().equals(soot.jimple.StaticFieldRef.class))
             return this;
@@ -88,10 +93,26 @@ public class PointerLatticeElement implements LatticeElement {
             if (!v.getValue().getType().getClass().equals(soot.RefType.class))
                 return this;
         }
-        String lhs = st.getDefBoxes().get(0).getValue().toString();
-        for (ValueBox v : st.getUseBoxes()) {
-            String rhs = v.getValue().toString();
-            this.State.get(lhs).add(rhs);
+        Value lhs = ((AssignStmt) st).getLeftOp();
+        Value rhs = ((AssignStmt) st).getRightOp();
+        if (lhs.getClass().equals(JInstanceFieldRef.class)) {
+            System.out.println("Its instanace");
+            String baseClass = ((JInstanceFieldRef) lhs).getBase().toString();
+            for (String val : this.State.get(baseClass)) {
+                String key = val + "." + ((JInstanceFieldRef) lhs).getField().getName();
+                HashSet<String> set = new HashSet<>();
+                if (rhs.getClass().equals(JNewExpr.class))
+                    this.State.put(key, this.State.get(rhs.toString()));
+                else
+                    this.State.put(key, this.State.get(rhs.toString()));
+
+            }
+        } else {
+
+            if (rhs.getClass().equals(JNewExpr.class))
+                this.State.get(lhs.toString()).add(st.hashCode() + "");
+            else
+                this.State.get(lhs.toString()).add(rhs.toString());
         }
 
         return this;

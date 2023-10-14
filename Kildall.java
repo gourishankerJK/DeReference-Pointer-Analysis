@@ -99,19 +99,10 @@ public class Kildall {
 
     public static List<String> GetVariables(Body body) {
         List<String> result = new ArrayList<String>();
-        int lineNumber = 0;
         for (Unit unit : body.getUnits()) {
-            if (unit.getClass().equals(JAssignStmt.class)) {
-                AssignStmt as = (AssignStmt) unit;
-                if (as.getRightOp().toString().startsWith("new")) {
-                    as.setRightOp(StringConstant.v("new" + lineNumber));
-                }
-            }
-            lineNumber++;
             for (ValueBox vBox : unit.getDefBoxes()) {
                 // only consider variables of the reference types -- ASSUMPTION
                 if (vBox.getValue().getType().getClass().equals(soot.RefType.class)) {
-
                     result.add(vBox.getValue().toString());
                 }
             }
