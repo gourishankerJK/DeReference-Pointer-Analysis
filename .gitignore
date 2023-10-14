@@ -25,4 +25,8 @@ replay_pid*
 
 *.png
 
+<<<<<<< HEAD
 latticeTest.java
+=======
+latticeTest.java
+>>>>>>> origin/master
