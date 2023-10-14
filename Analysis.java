@@ -23,7 +23,6 @@ import soot.UnitPrinter;
 import soot.NormalUnitPrinter;
 
 import soot.toolkits.graph.ExceptionalUnitGraph;
-import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.util.cfgcmd.CFGToDotGraph;
 import soot.util.dot.DotGraph;
 

@@ -16,21 +16,19 @@ public class Kildall {
 
         // Preprocess - get all the variables
         List<String> variablesInProgram = GetVariables(body);
-
-        // Add an initial element for the analysis and mark them for propagation
-        body.getUnits().forEach((unit) -> {
-            programPoints.add(new ProgramPoint(new PointerLatticeElement(variablesInProgram), (Stmt) unit,
+        int ppIndex = 0;
+        for (Unit unit : body.getUnits()) {
+            programPoints.add(new ProgramPoint(ppIndex++, new PointerLatticeElement(variablesInProgram), (Stmt) unit,
                     true));
-        });
-
+        }
         UnitGraph cfg = new ExceptionalUnitGraph(body);
 
         ProgramPoint analysisPoint;
+        int j = 0;
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
+
             analysisPoint.markedForPropagation = false;
             int i = 0;
-
-            // printpp(programPoints);
 
             for (ProgramPoint successor : GetSuccessors(analysisPoint, programPoints,
                     cfg)) {
@@ -55,9 +53,14 @@ public class Kildall {
                 i++;
             }
 
-        }
+            System.out.println("___________________________________________________Ending iteration : " + j++);
+            for (ProgramPoint pp : programPoints) {
+                pp.print();
+            }
 
+        }
         return programPoints;
+
     }
 
     private List<ProgramPoint> GetSuccessors(ProgramPoint programPoint, List<ProgramPoint> programPoints,
