@@ -1,4 +1,6 @@
 import java.util.HashSet;
+
+import soot.ValueBox;
 import soot.jimple.Stmt;
 import java.util.HashMap;
 import java.util.List;
@@ -67,14 +69,21 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'tf_assignstmt'");
+        if (st.getDefBoxes().isEmpty())
+            return this;
+        String lhs = st.getDefBoxes().get(0).getValue().toString();
+        for (ValueBox v : st.getUseBoxes()) {
+            String rhs = v.getValue().toString();
+            this.State.get(lhs).add(rhs);
+        }
+
+        return this;
     }
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'tf_condstmt'");
+        return this;
     }
 
 }
