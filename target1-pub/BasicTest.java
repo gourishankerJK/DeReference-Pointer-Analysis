@@ -15,26 +15,5 @@ public class BasicTest {
         } else {
             v2.f = v1;
         }
-        int z = System.in.read();
-        for (int i = 0; i < 10; i++) {
-            if (i % 2 == 0)
-                v2.f = v3;
-            else
-                v2.f = v1;
-        }
-        // switch (z) {
-        // case 4:
-
-        // break;
-        // case 6:
-
-        // break;
-        // case 5:
-
-        // break;
-
-        // default:
-        // break;
-        // }
     }
 }

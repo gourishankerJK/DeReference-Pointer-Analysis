@@ -21,6 +21,6 @@ public class ProgramPoint {
                         + e.getState().get(key).toString());
         }
         // "markedForPropagation : " + markedForPropagation +
-        System.out.println("\n");
+        System.out.println();
     }
 }
