@@ -4,8 +4,13 @@ import java.util.List;
 
 import soot.Body;
 import soot.Unit;
+import soot.Value;
 import soot.ValueBox;
+import soot.jimple.AssignStmt;
+import soot.jimple.Jimple;
 import soot.jimple.Stmt;
+import soot.jimple.StringConstant;
+import soot.jimple.internal.JAssignStmt;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.toolkits.graph.UnitGraph;
 
@@ -30,7 +35,7 @@ public class Kildall {
             analysisPoint.markedForPropagation = false;
             int i = 0;
 
-            System.out.println("Analysing: " + analysisPoint.stmt.toString());
+            System.out.println("Analysing: " + analysisPoint.lineNumber + ": " + analysisPoint.stmt.toString());
 
             for (ProgramPoint successor : GetSuccessors(analysisPoint, programPoints,
                     cfg)) {
@@ -45,7 +50,7 @@ public class Kildall {
 
                 }
 
-                if (joinElement.equals(successor.latticeElement)) {
+                if (joinElement.equals(successor.latticeElement) && !successor.markedForPropagation) {
                     successor.markedForPropagation = false;
                 } else {
                     successor.markedForPropagation = true;
@@ -55,11 +60,11 @@ public class Kildall {
                 i++;
             }
 
-            System.out.println("___________________________________________________Ending iteration : " + j++);
-            for (ProgramPoint pp : programPoints) {
-                pp.print();
-            }
+            System.out.println("Ending iteration : " + j++ + "___________________________________________________\n");
 
+        }
+        for (ProgramPoint pp : programPoints) {
+            pp.print();
         }
         return programPoints;
 
@@ -94,12 +99,25 @@ public class Kildall {
 
     public static List<String> GetVariables(Body body) {
         List<String> result = new ArrayList<String>();
+        int lineNumber = 0;
         for (Unit unit : body.getUnits()) {
+            if (unit.getClass().equals(JAssignStmt.class)) {
+                AssignStmt as = (AssignStmt) unit;
+                if (as.getRightOp().toString().startsWith("new")) {
+                    as.setRightOp(StringConstant.v("new" + lineNumber));
+                }
+            }
+            lineNumber++;
             for (ValueBox vBox : unit.getDefBoxes()) {
-                result.add(vBox.getValue().toString());
+                // only consider variables of the reference types -- ASSUMPTION
+                if (vBox.getValue().getType().getClass().equals(soot.RefType.class)) {
+
+                    result.add(vBox.getValue().toString());
+                }
             }
         }
 
+        System.out.println(result);
         return result;
     }
 }
