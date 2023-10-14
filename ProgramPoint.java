@@ -20,6 +20,7 @@ public class ProgramPoint {
                 System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "
                         + e.getState().get(key).toString());
         }
-        System.out.println("markedForPropagation : " + markedForPropagation + "\n");
+        // "markedForPropagation : " + markedForPropagation +
+        System.out.println("\n");
     }
 }

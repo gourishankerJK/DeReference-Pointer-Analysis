@@ -127,7 +127,6 @@ public class Analysis extends PAVBase {
                 if (!(u instanceof Stmt)) {
                     continue;
                 }
-                Stmt s = (Stmt) u;
                 printUnit(lineno, body, u);
                 lineno++;
             }
