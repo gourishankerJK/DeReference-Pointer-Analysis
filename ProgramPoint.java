@@ -1,40 +1,48 @@
-import java.util.HashMap;
+import java.util.List;
 
 import soot.jimple.Stmt;
 
+/**
+ * A class to hold the program point abstraction
+ */
 public class ProgramPoint {
-    int lineNumber;
     LatticeElement latticeElement;
-    Stmt stmt;
+    Stmt statement;
     boolean markedForPropagation;
+    List<ProgramPoint> successors;
 
-    public ProgramPoint(int index, LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
-        this.lineNumber = index;
+    public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         this.latticeElement = latticeElement;
-        this.stmt = stmt;
+        this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
     }
 
-    public void print(HashMap<Integer, String> map) {
-        PointerLatticeElement e = (PointerLatticeElement) this.latticeElement;
-        System.out.println(stmt.getClass().getName());
-        for (String key : e.getState().keySet()) {
-            String lv = key;
-            for (Integer k : map.keySet()) {
-                if (key.contains(k.toString()))
-                    lv = lv.replace(k.toString(), map.get(k).toString());
+    public void Propagate() {
+        int i = 0;
+        if (!markedForPropagation)
+            return;
+        // Unmark and propagate to the successors
+        markedForPropagation = false;
+        System.out.println(statement.toString());
+        for (ProgramPoint successor : successors) {
+            System.out.println("\t" + successor.statement.toString());
+            LatticeElement joinElement;
+
+            if (statement.branches()) {
+                joinElement = successor.latticeElement
+                        .join_op(latticeElement.tf_condstmt(i == 0, statement));
+            } else {
+                joinElement = successor.latticeElement
+                        .join_op(latticeElement.tf_assignstmt(statement));
             }
-            if (!e.getState().get(key).isEmpty()) {
-                String rv = e.getState().get(key).toString();
-                for (Integer k : map.keySet()) {
-                    if (rv.contains(k.toString()))
-                        rv = rv.replace(k.toString(), map.get(k).toString());
-                }
-                System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + lv + " : "
-                        + rv);
+            // Unmark the successor nodes based on the previous value
+            if (joinElement.equals(successor.latticeElement) && !successor.markedForPropagation) {
+                successor.markedForPropagation = false;
+            } else {
+                successor.markedForPropagation = true;
+                successor.latticeElement = joinElement;
             }
+            i++;
         }
-        // "markedForPropagation : " + markedForPropagation +
-        System.out.println();
     }
 }

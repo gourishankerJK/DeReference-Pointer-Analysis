@@ -1,11 +1,11 @@
 import java.util.HashSet;
 
+import soot.Body;
 import soot.RefType;
-import soot.UnitBox;
+import soot.Unit;
 import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AssignStmt;
-import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -15,13 +15,14 @@ import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JNopStmt;
 import soot.jimple.internal.JimpleLocal;
+import soot.tagkit.LineNumberTag;
+import soot.toolkits.graph.ExceptionalUnitGraph;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class PointerLatticeElement implements LatticeElement {
-    /// Some functions that we may use
-    // construtor
     private HashMap<String, HashSet<String>> State;
 
     public PointerLatticeElement() {
@@ -111,7 +112,8 @@ public class PointerLatticeElement implements LatticeElement {
         } else {
             // Use hash code for new assignments
             if (rhs.getClass().equals(JNewExpr.class))
-                this.State.get(lhs.toString()).add(st.hashCode() + "");
+                this.State.get(lhs.toString())
+                        .add("new" + String.format("%02d", Integer.parseInt(st.getTags().get(1).toString())));
             // If rhs is also a reference then take the map of that reference and assign to
             // current lhs
             else if (rhs.getClass().equals(JimpleLocal.class)) {
@@ -127,7 +129,6 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        // TODO Auto-generated method stub
         if (st.getClass().equals(TableSwitchStmt.class))
             System.out.println("tableswitch: " + ((TableSwitchStmt) st).getKey().toString());
         else if (st.getClass().equals(IfStmt.class))
@@ -135,4 +136,51 @@ public class PointerLatticeElement implements LatticeElement {
         return this;
     }
 
+    public static List<ProgramPoint> PreProcessForKildall(Body body) {
+        List<ProgramPoint> result = new ArrayList<ProgramPoint>();
+        HashMap<Unit, ProgramPoint> mp = new HashMap<>();
+        List<String> variables = GetRefTypeVariables(body);
+        ExceptionalUnitGraph graph = new ExceptionalUnitGraph(body);
+        int lineno = 0;
+        // Initial pass to create list of program points
+        for (Unit unit : body.getUnits()) {
+            unit.addTag(new LineNumberTag(lineno));
+            ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true);
+            mp.put(unit, programPoint);
+            result.add(programPoint);
+        }
+        // second pass to link the successors of each program point
+        for (Unit unit : body.getUnits()) {
+            List<ProgramPoint> successors = new ArrayList<>();
+            for (Unit succ : graph.getSuccsOf(unit)) {
+                successors.add(mp.get(succ));
+            }
+            mp.get(unit).successors = successors;
+        }
+        return result;
+    }
+
+    public static List<String> GetRefTypeVariables(Body body) {
+        List<String> result = new ArrayList<String>();
+        for (Unit unit : body.getUnits()) {
+            for (ValueBox vBox : unit.getDefBoxes()) {
+                // only consider variables of the reference types -- ASSUMPTION
+                if (vBox.getValue().getType().getClass().equals(soot.RefType.class) &&
+                        !vBox.getValue().getClass().equals(JInstanceFieldRef.class)) {
+                    result.add(vBox.getValue().toString());
+                }
+            }
+
+        }
+        return result;
+    }
+
+    public static void PrintProgramPoints(List<ProgramPoint> programPoints) {
+        int i = 0;
+        for (ProgramPoint programPoint : programPoints) {
+            System.out.println(String.format("----------%02d", i) + programPoint.statement.toString());
+            ((PointerLatticeElement) programPoint.latticeElement).printState();
+            i++;
+        }
+    }
 }

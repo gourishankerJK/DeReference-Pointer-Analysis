@@ -12,7 +12,6 @@ import java.util.*;
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
-
 import soot.Unit;
 import soot.Scene;
 import soot.Body;
@@ -29,8 +28,6 @@ import soot.util.dot.DotGraph;
 ////////////////////////////////////////////////////////////////////////////////
 
 public class Analysis extends PAVBase {
-    private DotGraph dot = new DotGraph("callgraph");
-    private static HashMap<String, Boolean> visited = new HashMap<String, Boolean>();
 
     public Analysis() {
         /*************************************************************
@@ -86,12 +83,11 @@ public class Analysis extends PAVBase {
 
         if (methodFound) {
             printInfo(targetMethod);
-            Kildall kildall = new Kildall();
-            kildall.ComputeLFP(targetMethod.getActiveBody());
-            /*************************************************************
-             * XXX This would be a good place to call the function
-             * which performs the Kildalls iterations over the LatticeElement.
-             *************************************************************/
+            // Compute Least fix point using Kildall's algorithms
+            List<ProgramPoint> result = Kildall
+                    .ComputeLFP(PointerLatticeElement.PreProcessForKildall(targetMethod.getActiveBody()));
+            PointerLatticeElement.PrintProgramPoints(result);
+
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
@@ -122,7 +118,7 @@ public class Analysis extends PAVBase {
         if (!entryMethod.isPhantom() && entryMethod.isConcrete()) {
             Body body = entryMethod.retrieveActiveBody();
 
-            int lineno = 0;
+            Integer lineno = 0;
             for (Unit u : body.getUnits()) {
                 if (!(u instanceof Stmt)) {
                     continue;
