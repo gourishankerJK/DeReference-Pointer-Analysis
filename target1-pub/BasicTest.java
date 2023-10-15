@@ -7,13 +7,30 @@ public class BasicTest {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
-        // v2.f = v1;
-        // int x = 2;
-        // int y = 3;
-        // if (x > y) {
-        // v2.f = v2;
-        // } else {
-        // v2.f = v1;
-        // }
+    }
+
+    private static int something() {
+        return 23;
+    }
+
+    static void fun2(int i) {
+        int x = something();
+        x++;
+        i = x;
+        Object t1 = null;
+        Object t2 = new Object();
+        Object t3 = null;
+        if (i > 10) {
+            t3 = t1;
+        } else {
+            t3 = t2;
+        }
+        t3.toString();
+    }
+
+    static void fun3(int i) {
+        BasicTest t1 = null;
+        BasicTest t2 = new BasicTest();
+        t2.f.f = t1;
     }
 }

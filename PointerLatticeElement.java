@@ -1,14 +1,20 @@
 import java.util.HashSet;
 
+import soot.RefType;
 import soot.UnitBox;
 import soot.Value;
 import soot.ValueBox;
 import soot.jimple.AssignStmt;
+import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
+import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
+import soot.jimple.internal.JIdentityStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
+import soot.jimple.internal.JNopStmt;
+import soot.jimple.internal.JimpleLocal;
 
 import java.util.HashMap;
 import java.util.List;
@@ -81,22 +87,19 @@ public class PointerLatticeElement implements LatticeElement {
         if (st.getDefBoxes().isEmpty()) {
             return this;
         }
-        System.out.println("getLeftOp: " + ((AssignStmt) st).getLeftOp().toString() + " type: "
-                + ((AssignStmt) st).getLeftOp().getClass().toString());
-        System.out.println("getRightOp: " + ((AssignStmt) st).getRightOp().getClass().toString() + " type: "
-                + ((AssignStmt) st).getRightOp().getType().toString());
-        // Idenitty for static class
-        if (((AssignStmt) st).getRightOp().getClass().equals(soot.jimple.StaticFieldRef.class))
+
+        // do nothing for identity or noop statements
+        if (st.getClass().equals(JIdentityStmt.class) || st.getClass().equals(JNopStmt.class))
             return this;
-        // Identity for primitives
-        for (ValueBox v : st.getDefBoxes()) {
-            if (!v.getValue().getType().getClass().equals(soot.RefType.class))
-                return this;
-        }
+        // Handle Assignment statements here
         Value lhs = ((AssignStmt) st).getLeftOp();
         Value rhs = ((AssignStmt) st).getRightOp();
+        // Idenitty if rhs is static, or if lhs is a primitive type
+        if (rhs.getClass().equals(StaticFieldRef.class) || !lhs.getType().getClass().equals(RefType.class))
+            return this;
+        // TODO: Modify the below logic to handle all cases
+        // If lhs is class.field: TODO: handle for rhs as well
         if (lhs.getClass().equals(JInstanceFieldRef.class)) {
-            System.out.println("Its instanace");
             String baseClass = ((JInstanceFieldRef) lhs).getBase().toString();
             for (String val : this.State.get(baseClass)) {
                 String key = val + "." + ((JInstanceFieldRef) lhs).getField().getName();
@@ -104,14 +107,19 @@ public class PointerLatticeElement implements LatticeElement {
                     this.State.put(key, this.State.get(rhs.toString()));
                 else
                     this.State.put(key, this.State.get(rhs.toString()));
-
             }
         } else {
-
+            // Use hash code for new assignments
             if (rhs.getClass().equals(JNewExpr.class))
                 this.State.get(lhs.toString()).add(st.hashCode() + "");
-            else
+            // If rhs is also a reference then take the map of that reference and assign to
+            // current lhs
+            else if (rhs.getClass().equals(JimpleLocal.class)) {
+                this.State.put(lhs.toString(), State.get(rhs.toString()));
+                // Other cases just add the string to the current map
+            } else {
                 this.State.get(lhs.toString()).add(rhs.toString());
+            }
         }
 
         return this;
