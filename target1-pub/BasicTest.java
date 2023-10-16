@@ -6,10 +6,16 @@ public class BasicTest {
     static void fun1() throws IOException {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        v2 = v1.f;
-        if(v2.f == v1.f){
-            v2 = null;
+        if (v1 == v2) {
+            v1 = v2;
+        } else {
+            v1 = null;
         }
+        v2.f = v1;
+        v2 = v1.f;
+        v1.f.f = v2;
+        int x = 0;
+        int y = x;
     }
 
     private static int something() {
