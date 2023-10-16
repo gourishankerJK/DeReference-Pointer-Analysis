@@ -20,7 +20,7 @@ public class PointerLatticePreProcess implements IPreProcess {
         int lineno = 0;
         // Initial pass to create list of program points
         for (Unit unit : body.getUnits()) {
-            unit.addTag(new LineNumberTag(lineno));
+            unit.addTag(new LineNumberTag(lineno++));
             ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true);
             mp.put(unit, programPoint);
             result.add(programPoint);
@@ -35,7 +35,7 @@ public class PointerLatticePreProcess implements IPreProcess {
         }
         return result;
     }
-
+   
     public static List<String> GetRefTypeVariables(Body body) {
         List<String> result = new ArrayList<String>();
         for (Local local : body.getLocals()) {

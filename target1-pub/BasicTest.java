@@ -6,6 +6,12 @@ public class BasicTest {
     static void fun1() throws IOException {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
+        if(v1 == v2){
+            v1 = v2;
+        }
+        else {
+            v1 = null;
+        }
         v2.f = v1;
     }
 
@@ -19,7 +25,7 @@ public class BasicTest {
         i = x;
         Object t1 = null;
         Object t2 = new Object();
-        Object t3 = null;
+        Object t3 = new Object();
         if (i > 10) {
             t3 = t1;
         } else {

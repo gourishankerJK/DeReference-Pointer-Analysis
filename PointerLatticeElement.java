@@ -1,8 +1,10 @@
 import java.util.HashSet;
 
+import soot.Local;
 import soot.RefType;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.EqExpr;
 import soot.jimple.IfStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -12,6 +14,7 @@ import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JNopStmt;
 import soot.jimple.internal.JimpleLocal;
+import soot.tagkit.Tag;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +34,13 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     public PointerLatticeElement(HashMap<String, HashSet<String>> state) {
-        this.State = state;
+         HashMap<String, HashSet<String>> newState = new HashMap<String, HashSet<String>>();
+        for (String key : state.keySet()) {
+            HashSet<String> value = new HashSet<String>();
+            value.addAll(state.get(key));
+            newState.put(key, value);
+        }
+        this.State = newState;
     }
 
     public HashMap<String, HashSet<String>> getState() {
@@ -44,7 +53,11 @@ public class PointerLatticeElement implements LatticeElement {
             System.out.println(this.State.get(key).toString());
         }
         System.out.println();
+    }
 
+    public static String getLineNumber(Stmt st) {
+        List<Tag> tags = st.getTags();
+        return tags.get(tags.size() - 1).toString();
     }
 
     @Override
@@ -80,7 +93,6 @@ public class PointerLatticeElement implements LatticeElement {
     public LatticeElement tf_assignstmt(Stmt st) {
         // no actual assignments happening example virtual invoke
 
-        String lineNumber = st.getTags().get(1).toString();
         if (st.getDefBoxes().isEmpty()) {
             return this;
         }
@@ -125,10 +137,32 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        if (st.getClass().equals(TableSwitchStmt.class))
-            System.out.println("tableswitch: " + ((TableSwitchStmt) st).getKey().toString());
-        else if (st.getClass().equals(IfStmt.class))
-            System.out.println("tf_condstmt: " + ((IfStmt) st).getCondition().toString());
+        // if (st.getClass().equals(TableSwitchStmt.class))
+        // System.out.println("tableswitch: " + ((TableSwitchStmt)
+        // st).getKey().toString());
+            //System.out.println((b == true)? "trueBranch" : "False Branch "+ this.State);
+        if (st instanceof IfStmt) {
+            return ifCond(b, (IfStmt) st);
+        }
+
+        return this;
+    }
+
+    private LatticeElement ifCond(boolean condition, IfStmt st) {
+
+        Value t = st.getCondition();
+        Value left = t.getUseBoxes().get(0).getValue();
+        Value right = t.getUseBoxes().get(1).getValue();
+        System.out.println((condition == true)? "trueBranch" : "False Branch ");
+        if (condition == true) {
+            if (right.getType() instanceof RefType && left.getType() instanceof RefType) {
+                PointerLatticeElement result = new PointerLatticeElement(this.State) ;
+                result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
+                result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
+                return (LatticeElement) result;
+            }
+
+        } 
         return this;
     }
 }
