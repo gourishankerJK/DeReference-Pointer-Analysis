@@ -92,7 +92,7 @@ public class Analysis extends PAVBase {
              *************************************************************/
             // Compute Least fix point using Kildall's algorithms
             IPreProcess preProcess = new PointerLatticePreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.getActiveBody());
+            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
             List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
             ProgramPoint.PrintProgramPoints(result);
             drawMethodDependenceGraph(targetMethod);
