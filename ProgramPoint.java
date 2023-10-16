@@ -45,4 +45,13 @@ public class ProgramPoint {
             i++;
         }
     }
+
+    public static void PrintProgramPoints(List<ProgramPoint> programPoints) {
+        int i = 0;
+        for (ProgramPoint programPoint : programPoints) {
+            System.out.println(String.format("----------%02d", i) + programPoint.statement.toString());
+            ((PointerLatticeElement) programPoint.latticeElement).printState();
+            i++;
+        }
+    }
 }

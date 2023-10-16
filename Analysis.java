@@ -84,10 +84,11 @@ public class Analysis extends PAVBase {
         if (methodFound) {
             printInfo(targetMethod);
             // Compute Least fix point using Kildall's algorithms
+            IPreProcess preProcess = new PointerLatticePreProcess();
+            List<ProgramPoint> preProcessedBody = preProcess.PreProcessForKildall(targetMethod.getActiveBody());
             List<ProgramPoint> result = Kildall
-                    .ComputeLFP(PointerLatticeElement.PreProcessForKildall(targetMethod.getActiveBody()));
-            PointerLatticeElement.PrintProgramPoints(result);
-
+                    .ComputeLFP(preProcessedBody);
+            ProgramPoint.PrintProgramPoints(result);
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
