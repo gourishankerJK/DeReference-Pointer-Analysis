@@ -12,7 +12,7 @@ import soot.toolkits.graph.ExceptionalUnitGraph;
 
 public class PointerLatticePreProcess implements IPreProcess {
 
-    public List<ProgramPoint> PreProcessForKildall(Body body) {
+    public  List<ProgramPoint> PreProcess(Body body) {
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
         HashMap<Unit, ProgramPoint> mp = new HashMap<>();
         List<String> variables = GetRefTypeVariables(body);

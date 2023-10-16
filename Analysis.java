@@ -9,6 +9,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 import java.util.*;
 
+import polyglot.ast.Precedence;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
@@ -83,11 +85,15 @@ public class Analysis extends PAVBase {
 
         if (methodFound) {
             printInfo(targetMethod);
+            Kildall kildall = new Kildall();
+            /*************************************************************
+             * XXX This would be a good place to call the function
+             * which performs the Kildalls iterations over the LatticeElement.
+             *************************************************************/
             // Compute Least fix point using Kildall's algorithms
             IPreProcess preProcess = new PointerLatticePreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcessForKildall(targetMethod.getActiveBody());
-            List<ProgramPoint> result = Kildall
-                    .ComputeLFP(preProcessedBody);
+            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.getActiveBody());
+            List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
             ProgramPoint.PrintProgramPoints(result);
             drawMethodDependenceGraph(targetMethod);
         } else {
