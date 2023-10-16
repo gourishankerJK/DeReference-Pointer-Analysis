@@ -3,12 +3,20 @@ import java.util.HashSet;
 import soot.Local;
 import soot.NullType;
 import soot.RefType;
+import soot.Type;
 import soot.Value;
+import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.CmpExpr;
+import soot.jimple.Constant;
 import soot.jimple.EqExpr;
+import soot.jimple.FieldRef;
 import soot.jimple.IfStmt;
+import soot.jimple.InstanceFieldRef;
+import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NeExpr;
+import soot.jimple.NopStmt;
+import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
@@ -102,13 +110,15 @@ public class PointerLatticeElement implements LatticeElement {
         }
 
         // do nothing for identity or noop statements
-        if (st.getClass().equals(JIdentityStmt.class) || st.getClass().equals(JNopStmt.class))
+        if (st.getClass().equals(JIdentityStmt.class) ||
+                st.getClass().equals(JNopStmt.class))
             return this;
         // Handle Assignment statements here
         Value lhs = ((AssignStmt) st).getLeftOp();
         Value rhs = ((AssignStmt) st).getRightOp();
         // Idenitty if rhs is static, or if lhs is a primitive type
-        if (rhs.getClass().equals(StaticFieldRef.class) || !lhs.getType().getClass().equals(RefType.class))
+        if (rhs.getClass().equals(StaticFieldRef.class) ||
+                !lhs.getType().getClass().equals(RefType.class))
             return this;
         // TODO: Modify the below logic to handle all cases
         // If lhs is class.field: TODO: handle for rhs as well
@@ -125,8 +135,9 @@ public class PointerLatticeElement implements LatticeElement {
             // Use hash code for new assignments
             if (rhs.getClass().equals(JNewExpr.class))
                 this.State.get(lhs.toString())
-                        .add("new" + String.format("%02d", Integer.parseInt(st.getTags().get(1).toString())));
-            // If rhs is also a reference then take the map of that reference and assign to
+                        .add("new" + String.format("%02d",
+                                Integer.parseInt(st.getTags().get(1).toString())));
+            // If rhs is also a reference then take the map of that reference and assign
             // current lhs
             else if (rhs.getClass().equals(JimpleLocal.class)) {
                 this.State.put(lhs.toString(), State.get(rhs.toString()));
@@ -138,15 +149,52 @@ public class PointerLatticeElement implements LatticeElement {
 
         return this;
     }
+    // @Override
+    // public LatticeElement tf_assignstmt(Stmt st) {
+    // if (st instanceof AssignStmt) {
+    // Value leftValue = ((AssignStmt) st).getLeftOp();
+    // Value rightValue = ((AssignStmt) st).getRightOp();
+
+    // System.out.println((leftValue instanceof InstanceFieldRef) == true);
+    // if (rightValue instanceof Constant) {
+    // // System.out.println("Constant Assignment");
+    // } else if (leftValue instanceof Local && rightValue instanceof Local) {
+    // // System.out.println("Local-to-Local Assignment");
+    // } else if (leftValue instanceof InstanceFieldRef) {
+    // InstanceFieldRef fieldRef = (InstanceFieldRef) leftValue;
+    // String fieldName = fieldRef.getField().getName();
+    // String className = fieldRef.getField().getDeclaringClass().getName();
+    // String variableName = ((InstanceFieldRef) fieldRef).getBase().toString();
+    // System.out.println(variableName + "." + className + "." + fieldName);
+    // } else if (leftValue instanceof ArrayRef) {
+    // System.out.println("Array Assignment");
+    // } else {
+    // System.out.println("Unknown Assignment");
+    // }
+    // } else {
+    // System.out.println("Not an Assignment Statement");
+    // }
+    // return this;
+    // }
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        // if (st.getClass().equals(TableSwitchStmt.class))
-        // System.out.println("tableswitch: " + ((TableSwitchStmt)
-        // st).getKey().toString());
-        // System.out.println((b == true)? "trueBranch" : "False Branch "+ this.State);
         if (st instanceof IfStmt) {
             return ifCond(b, (IfStmt) st);
+        } else if (st instanceof LookupSwitchStmt) {
+            System.out.println("LookupSwitch Statement");
+        } else if (st instanceof TableSwitchStmt) {
+            System.out.println("TableSwitch Statement");
+        } else if (st instanceof IfStmt && st.getUnitBoxes().size() > 1) {
+            System.out.println("If Statement with Goto");
+        } else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
+                && st.getUnitBoxes().get(0).getUnit() instanceof NopStmt) {
+            System.out.println("If Statement with Nop");
+        } else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
+                && st.getUnitBoxes().get(0).getUnit() instanceof ReturnStmt) {
+            System.out.println("If Statement with Return");
+        } else {
+            System.out.println("Unknown Conditional Statement");
         }
 
         return this;
@@ -159,27 +207,37 @@ public class PointerLatticeElement implements LatticeElement {
         return (LatticeElement) result;
     }
 
-    private LatticeElement conditionSatisfiedNonNull(Value value){
-            PointerLatticeElement result = new PointerLatticeElement(this.State);
-            if(this.State.get(value.toString()).contains("null")){
-                  result.State.get("null").retainAll(Collections.singleton("null"));
-            }
-            return result;
+    private LatticeElement conditionSatisfiedNonNull(Value value) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        if (this.State.get(value.toString()).contains("null")) {
+            result.State.get("null").retainAll(Collections.singleton("null"));
+        }
+
+        return result;
     }
-     private LatticeElement conditionNotSatisfiedNonNull(Value value){
-            PointerLatticeElement result = new PointerLatticeElement(this.State);
-            if(this.State.get(value.toString()).contains("null")){
-                  result.State.get("null").removeAll((Collections.singleton("null"));
-            }
-            return result;
+
+    private LatticeElement conditionNotSatisfiedNonNull(Value value) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        if (this.State.get(value.toString()).contains("null")) {
+            result.State.get("null").removeAll((Collections.singleton("null")));
+        }
+        return result;
+    }
+
+    private boolean isReferenceType(Type type) {
+        return type instanceof RefType;
+    }
+
+    private boolean isNullType(Type type) {
+        return type.equals(NullType.v());
     }
 
     private LatticeElement ifCond(boolean condition, IfStmt st) {
         Value t = st.getCondition();
         Value left = t.getUseBoxes().get(0).getValue();
         Value right = t.getUseBoxes().get(1).getValue();
-        System.out.println(right.getType());
-        if (right.getType() instanceof RefType && left.getType() instanceof RefType) {
+        System.out.println("Type :" +left + (right.getType() instanceof InstanceFieldRef));
+        if (isReferenceType(right.getType()) && isReferenceType(left.getType())) {
             if (t instanceof EqExpr) {
                 if (condition == true) {
                     return conditionSatisfied(left, right);
@@ -189,24 +247,32 @@ public class PointerLatticeElement implements LatticeElement {
                     return conditionSatisfied(left, right);
                 }
             }
-        } else if (right.getType().equals(NullType.v()) && left.getType() instanceof RefType) {
+        } else if (isNullType(right.getType()) && isReferenceType(left.getType())) {
             if (t instanceof EqExpr) {
                 if (condition == true) {
                     return conditionSatisfiedNonNull(left);
+                } else {
+                    return conditionNotSatisfiedNonNull(left);
                 }
             } else if (t instanceof NeExpr) {
                 if (condition == false) {
                     return conditionSatisfiedNonNull(left);
+                } else {
+                    return conditionNotSatisfiedNonNull(left);
                 }
             }
-        } else if (left.getType().equals(NullType.v()) && right.getType() instanceof RefType) {
+        } else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
             if (t instanceof EqExpr) {
                 if (condition == true) {
                     return conditionSatisfiedNonNull(right);
+                } else {
+                    return conditionNotSatisfiedNonNull(left);
                 }
             } else if (t instanceof NeExpr) {
                 if (condition == false) {
                     return conditionSatisfiedNonNull(right);
+                } else {
+                    return conditionNotSatisfiedNonNull(right);
                 }
             }
         }

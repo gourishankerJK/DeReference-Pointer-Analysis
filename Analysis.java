@@ -94,7 +94,7 @@ public class Analysis extends PAVBase {
             IPreProcess preProcess = new PointerLatticePreProcess();
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
             List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
-            ProgramPoint.PrintProgramPoints(result);
+          //  ProgramPoint.PrintProgramPoints(result);
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
