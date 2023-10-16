@@ -14,7 +14,7 @@ digraph "void fun1()" {
     "2"->"3" [color=black,];
     "12" [style=invis,label="Esc",];
     "2"->"12" [color=lightgray,label="\l+(Error)",];
-    "4" [label="if $r0 != $r1 goto label1",];
+    "4" [label="if $r0 != null goto label1",];
     "3"->"4" [color=black,];
     "13" [style=invis,label="Esc",];
     "3"->"13" [color=lightgray,label="\l+(Throwable)",];

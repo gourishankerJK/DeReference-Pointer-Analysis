@@ -6,7 +6,7 @@ public class BasicTest {
     static void fun1() throws IOException {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        if(v1 == v2){
+        if(v1 == null){
             v1 = v2;
         }
         else {
