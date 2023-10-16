@@ -1,26 +1,57 @@
+import java.util.List;
+
 import soot.jimple.Stmt;
 
+/**
+ * A class to hold the program point abstraction
+ */
 public class ProgramPoint {
-    int lineNumber;
     LatticeElement latticeElement;
-    Stmt stmt;
+    Stmt statement;
     boolean markedForPropagation;
+    List<ProgramPoint> successors;
 
-    public ProgramPoint(int index, LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
-        this.lineNumber = index;
+    public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         this.latticeElement = latticeElement;
-        this.stmt = stmt;
+        this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
     }
 
-    public void print() {
-        PointerLatticeElement e = (PointerLatticeElement) this.latticeElement;
-        for (String key : e.getState().keySet()) {
-            if (!e.getState().get(key).isEmpty())
-                System.out.println(String.format("%02d", lineNumber) + ": " + stmt.toString() + "; " + key + " : "
-                        + e.getState().get(key).toString());
+    public void Propagate() {
+        int i = 0;
+        if (!markedForPropagation)
+            return;
+        // Unmark and propagate to the successors
+        markedForPropagation = false;
+        System.out.println(statement.toString());
+        for (ProgramPoint successor : successors) {
+            System.out.println("\t" + successor.statement.toString());
+            LatticeElement joinElement;
+
+            if (statement.branches()) {
+                joinElement = successor.latticeElement
+                        .join_op(latticeElement.tf_condstmt(i == 0, statement));
+            } else {
+                joinElement = successor.latticeElement
+                        .join_op(latticeElement.tf_assignstmt(statement));
+            }
+            // Unmark the successor nodes based on the previous value
+            if (joinElement.equals(successor.latticeElement) && !successor.markedForPropagation) {
+                successor.markedForPropagation = false;
+            } else {
+                successor.markedForPropagation = true;
+                successor.latticeElement = joinElement;
+            }
+            i++;
         }
-        // "markedForPropagation : " + markedForPropagation +
-        System.out.println();
+    }
+
+    public static void PrintProgramPoints(List<ProgramPoint> programPoints) {
+        int i = 0;
+        for (ProgramPoint programPoint : programPoints) {
+            System.out.println(String.format("----------%02d", i) + programPoint.statement.toString());
+            ((PointerLatticeElement) programPoint.latticeElement).printState();
+            i++;
+        }
     }
 }
