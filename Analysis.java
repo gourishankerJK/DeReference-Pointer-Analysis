@@ -9,6 +9,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 import java.util.*;
 
+import polyglot.ast.Precedence;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
@@ -86,6 +88,7 @@ public class Analysis extends PAVBase {
 
         if (methodFound) {
             printInfo(targetMethod);
+            PreProcess.TagLineNumberWithStatement(targetMethod.getActiveBody());
             Kildall kildall = new Kildall();
             kildall.ComputeLFP(targetMethod.getActiveBody());
             /*************************************************************

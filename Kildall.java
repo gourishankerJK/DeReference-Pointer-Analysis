@@ -35,7 +35,7 @@ public class Kildall {
             analysisPoint.markedForPropagation = false;
             int i = 0;
 
-            System.out.println("Analysing: " + analysisPoint.lineNumber + ": " + analysisPoint.stmt.toString());
+            //System.out.println("Analysing: " + analysisPoint.lineNumber + ": " + analysisPoint.stmt.toString());
 
             for (ProgramPoint successor : GetSuccessors(analysisPoint, programPoints,
                     cfg)) {
@@ -60,7 +60,7 @@ public class Kildall {
                 i++;
             }
 
-            System.out.println("Ending iteration : " + j++ + "___________________________________________________\n");
+            //System.out.println("Ending iteration : " + j++ + "___________________________________________________\n");
 
         }
         for (ProgramPoint pp : programPoints) {

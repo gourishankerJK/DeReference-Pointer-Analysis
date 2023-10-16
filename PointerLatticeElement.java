@@ -75,6 +75,8 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
         // no actual assignments happening example virtual invoke
+
+        String lineNumber = st.getTags().get(1).toString();
         if (st.getDefBoxes().isEmpty()) {
             return this;
         }
