@@ -1,19 +1,22 @@
 import java.util.HashSet;
 
-import soot.UnitBox;
-import soot.ValueBox;
+import soot.RefType;
+import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
+import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
+import soot.jimple.internal.JIdentityStmt;
+import soot.jimple.internal.JInstanceFieldRef;
+import soot.jimple.internal.JNewExpr;
+import soot.jimple.internal.JNopStmt;
+import soot.jimple.internal.JimpleLocal;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class PointerLatticeElement implements LatticeElement {
-
-    /// Some functions that we may use
-    // construtor
     private HashMap<String, HashSet<String>> State;
 
     public PointerLatticeElement() {
@@ -53,7 +56,8 @@ public class PointerLatticeElement implements LatticeElement {
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
-            value.addAll(this.State.get(key));
+            if (this.State.containsKey(key))
+                value.addAll(this.State.get(key));
             joinElementState.put(key, value);
         }
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -78,20 +82,40 @@ public class PointerLatticeElement implements LatticeElement {
         if (st.getDefBoxes().isEmpty()) {
             return this;
         }
-        System.out.println("getLeftOp: " + ((AssignStmt) st).getLeftOp().toString());
-        System.out.println("getRightOp: " + ((AssignStmt) st).getRightOp().getClass().toString());
-        // Idenitty for static class
-        if (((AssignStmt) st).getRightOp().getClass().equals(soot.jimple.StaticFieldRef.class))
+
+        // do nothing for identity or noop statements
+        if (st.getClass().equals(JIdentityStmt.class) || st.getClass().equals(JNopStmt.class))
             return this;
-        // Identity for primitives
-        for (ValueBox v : st.getDefBoxes()) {
-            if (!v.getValue().getType().getClass().equals(soot.RefType.class))
-                return this;
-        }
-        String lhs = st.getDefBoxes().get(0).getValue().toString();
-        for (ValueBox v : st.getUseBoxes()) {
-            String rhs = v.getValue().toString();
-            this.State.get(lhs).add(rhs);
+        // Handle Assignment statements here
+        Value lhs = ((AssignStmt) st).getLeftOp();
+        Value rhs = ((AssignStmt) st).getRightOp();
+        // Idenitty if rhs is static, or if lhs is a primitive type
+        if (rhs.getClass().equals(StaticFieldRef.class) || !lhs.getType().getClass().equals(RefType.class))
+            return this;
+        // TODO: Modify the below logic to handle all cases
+        // If lhs is class.field: TODO: handle for rhs as well
+        if (lhs.getClass().equals(JInstanceFieldRef.class)) {
+            String baseClass = ((JInstanceFieldRef) lhs).getBase().toString();
+            for (String val : this.State.get(baseClass)) {
+                String key = val + "." + ((JInstanceFieldRef) lhs).getField().getName();
+                if (rhs.getClass().equals(JNewExpr.class))
+                    this.State.put(key, this.State.get(rhs.toString()));
+                else
+                    this.State.put(key, this.State.get(rhs.toString()));
+            }
+        } else {
+            // Use hash code for new assignments
+            if (rhs.getClass().equals(JNewExpr.class))
+                this.State.get(lhs.toString())
+                        .add("new" + String.format("%02d", Integer.parseInt(st.getTags().get(1).toString())));
+            // If rhs is also a reference then take the map of that reference and assign to
+            // current lhs
+            else if (rhs.getClass().equals(JimpleLocal.class)) {
+                this.State.put(lhs.toString(), State.get(rhs.toString()));
+                // Other cases just add the string to the current map
+            } else {
+                this.State.get(lhs.toString()).add(rhs.toString());
+            }
         }
 
         return this;
@@ -99,12 +123,10 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        // TODO Auto-generated method stub
         if (st.getClass().equals(TableSwitchStmt.class))
             System.out.println("tableswitch: " + ((TableSwitchStmt) st).getKey().toString());
         else if (st.getClass().equals(IfStmt.class))
             System.out.println("tf_condstmt: " + ((IfStmt) st).getCondition().toString());
         return this;
     }
-
 }
