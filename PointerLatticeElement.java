@@ -12,17 +12,14 @@ import soot.jimple.Constant;
 import soot.jimple.EqExpr;
 import soot.jimple.FieldRef;
 import soot.jimple.IfStmt;
-<<<<<<< HEAD
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NeExpr;
 import soot.jimple.NopStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
-=======
-import soot.jimple.NullConstant;
->>>>>>> origin/master
 import soot.jimple.Stmt;
+import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
@@ -71,11 +68,7 @@ public class PointerLatticeElement implements LatticeElement {
 
     public static String getLineNumber(Stmt st) {
         List<Tag> tags = st.getTags();
-<<<<<<< HEAD
-        return tags.get(tags.size() - 1).toString();
-=======
         return String.format("%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
->>>>>>> origin/master
     }
 
     @Override
