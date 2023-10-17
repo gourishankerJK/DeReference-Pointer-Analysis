@@ -6,9 +6,16 @@ public class BasicTest {
     static void fun1() throws IOException {
         BasicTest v1 = null;
         BasicTest v2 = new BasicTest();
-        if (v1 == null) {
+        if (v1 == v2) {
             v1 = v2;
+        } else {
+            v1 = null;
         }
+        v2.f = v1;
+        v2 = v1.f;
+        v1.f.f = v2;
+        int x = 0;
+        int y = x;
     }
 
     private static int something() {
