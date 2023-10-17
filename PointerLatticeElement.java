@@ -16,6 +16,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NeExpr;
 import soot.jimple.NopStmt;
+import soot.jimple.NullConstant;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -111,6 +112,118 @@ public class PointerLatticeElement implements LatticeElement {
         }
         return result;
     }
+
+    private LatticeElement tfAssignmentStmt(AssignStmt st) {
+        System.out.println("Hit assignment: " + st);
+        PointerLatticeElement result = new PointerLatticeElement(State);
+        Value lhs = st.getLeftOp();
+        Value rhs = st.getRightOp();
+
+        System.out.println(lhs.getClass() + " : " + rhs.getClass());
+
+        // x = new ()
+        if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {
+            result.State.get(lhs.toString()).add("new" + (getLineNumber(st)));
+        }
+        // x = y
+        if (lhs instanceof JimpleLocal && rhs instanceof JimpleLocal) {
+            result.State.put(lhs.toString(), new HashSet<>(result.State.get(rhs.toString())));
+        }
+
+        // x = null
+        if (lhs instanceof JimpleLocal && rhs instanceof NullConstant) {
+            result.State.get(lhs.toString()).add("null");
+        }
+
+        // x.f = null
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof NullConstant) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                String key = pseudoVar + "." + l.getField().getName();
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.get(key).add("null");
+            }
+        }
+
+        // x = y.f
+        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
+            HashSet<String> res = new HashSet<>();
+            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+            for (String pseudoVar : result.State.get(r.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + r.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                res.addAll(result.State.get(key));
+            }
+            result.State.put(lhs.toString(), res);
+        }
+
+        // x.f = y.f
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JInstanceFieldRef) {
+            HashSet<String> res = new HashSet<>();
+            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+            for (String pseudoVar : result.State.get(r.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + r.getField().getName();
+                res.addAll(result.State.get(key));
+            }
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + l.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.put(key, res);
+            }
+        }
+
+        // x.f = new
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JNewExpr) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                String key = pseudoVar + "." + l.getField().getName();
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.get(key).add("new" + getLineNumber(st));
+            }
+        }
+
+        // x.f = y
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JimpleLocal) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + l.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.put(key, result.State.get(rhs.toString()));
+            }
+        }
+
+        return result;
+    }
+
     // @Override
     // public LatticeElement tf_assignstmt(Stmt st) {
     // if (st instanceof AssignStmt) {
@@ -142,14 +255,15 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         if (st instanceof IfStmt) {
-            return ifCond(b, (IfStmt) st);
+            return handleIfCondition(b, (IfStmt) st);
         } else if (st instanceof LookupSwitchStmt) {
             System.out.println("LookupSwitch Statement");
         } else if (st instanceof TableSwitchStmt) {
             System.out.println("TableSwitch Statement");
         } else if (st instanceof IfStmt && st.getUnitBoxes().size() > 1) {
             System.out.println("If Statement with Goto");
-        } else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
+        } // Not possible in our case ; If statement with NOP
+        else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
                 && st.getUnitBoxes().get(0).getUnit() instanceof NopStmt) {
             System.out.println("If Statement with Nop");
         } else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
@@ -162,26 +276,26 @@ public class PointerLatticeElement implements LatticeElement {
         return this;
     }
 
-    private LatticeElement conditionSatisfied(Value left, Value right) {
+    private LatticeElement handleConditionTrueNonNull(Value left, Value right) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
         result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
         return (LatticeElement) result;
     }
 
-    private LatticeElement conditionSatisfiedNonNull(Value value) {
+    private LatticeElement handleConditionTrueOneNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         if (this.State.get(value.toString()).contains("null")) {
-            result.State.get("null").retainAll(Collections.singleton("null"));
+            result.State.get(value.toString()).retainAll(Collections.singleton("null"));
         }
 
         return result;
     }
 
-    private LatticeElement conditionNotSatisfiedNonNull(Value value) {
+    private LatticeElement handleConditionFalseOneNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         if (this.State.get(value.toString()).contains("null")) {
-            result.State.get("null").removeAll((Collections.singleton("null")));
+            result.State.get(value.toString()).removeAll((Collections.singleton("null")));
         }
         return result;
     }
@@ -194,50 +308,53 @@ public class PointerLatticeElement implements LatticeElement {
         return type.equals(NullType.v());
     }
 
-    private LatticeElement ifCond(boolean condition, IfStmt st) {
+    private LatticeElement handleIfCondition(boolean condition, IfStmt st) {
         Value t = st.getCondition();
         Value left = t.getUseBoxes().get(0).getValue();
         Value right = t.getUseBoxes().get(1).getValue();
-        System.out.println("Type :" +left + (right.getType() instanceof InstanceFieldRef));
+        System.out.println("Type :" + t);
+
         if (isReferenceType(right.getType()) && isReferenceType(left.getType())) {
-            if (t instanceof EqExpr) {
-                if (condition == true) {
-                    return conditionSatisfied(left, right);
-                }
-            } else if (t instanceof NeExpr) {
-                if (condition == false) {
-                    return conditionSatisfied(left, right);
-                }
-            }
+            System.out.println("Both right and left Reference Type");
+            return handleReferenceType(condition, t, left, right);
         } else if (isNullType(right.getType()) && isReferenceType(left.getType())) {
-            if (t instanceof EqExpr) {
-                if (condition == true) {
-                    return conditionSatisfiedNonNull(left);
-                } else {
-                    return conditionNotSatisfiedNonNull(left);
-                }
-            } else if (t instanceof NeExpr) {
-                if (condition == false) {
-                    return conditionSatisfiedNonNull(left);
-                } else {
-                    return conditionNotSatisfiedNonNull(left);
-                }
-            }
+            System.out.println("Only left Reference Type");
+            return handleNullType(condition, t, left);
         } else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
-            if (t instanceof EqExpr) {
-                if (condition == true) {
-                    return conditionSatisfiedNonNull(right);
-                } else {
-                    return conditionNotSatisfiedNonNull(left);
-                }
-            } else if (t instanceof NeExpr) {
-                if (condition == false) {
-                    return conditionSatisfiedNonNull(right);
-                } else {
-                    return conditionNotSatisfiedNonNull(right);
-                }
+            System.out.println("Only right Reference Type");
+            return handleNullType(condition, t, right);
+        }
+
+        return new PointerLatticeElement(this.State);
+    }
+
+    private LatticeElement handleReferenceType(boolean condition, Value t, Value left, Value right) {
+        if (t instanceof EqExpr) {
+            if (condition == true) {
+                return handleConditionTrueNonNull(left, right);
+            }
+        } else if (t instanceof NeExpr) {
+            if (condition == false) {
+                return handleConditionTrueNonNull(left, right);
             }
         }
-        return (LatticeElement) new PointerLatticeElement(this.State);
+        return new PointerLatticeElement(this.State);
+    }
+
+    private LatticeElement handleNullType(boolean condition, Value t, Value value) {
+        if (t instanceof EqExpr) {
+            if (condition == true) {
+                return handleConditionTrueOneNull(value);
+            } else {
+                return handleConditionFalseOneNull(value);
+            }
+        } else if (t instanceof NeExpr) {
+            if (condition == false) {
+                return handleConditionTrueOneNull(value);
+            } else {
+                return handleConditionFalseOneNull(value);
+            }
+        }
+        return new PointerLatticeElement(this.State);
     }
 }
