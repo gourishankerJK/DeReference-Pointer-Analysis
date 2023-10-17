@@ -6,13 +6,11 @@ import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.EqExpr;
 import soot.jimple.IfStmt;
-import soot.jimple.StaticFieldRef;
+import soot.jimple.NullConstant;
 import soot.jimple.Stmt;
-import soot.jimple.TableSwitchStmt;
-import soot.jimple.internal.JIdentityStmt;
+import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
-import soot.jimple.internal.JNopStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
 
@@ -34,7 +32,7 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     public PointerLatticeElement(HashMap<String, HashSet<String>> state) {
-         HashMap<String, HashSet<String>> newState = new HashMap<String, HashSet<String>>();
+        HashMap<String, HashSet<String>> newState = new HashMap<String, HashSet<String>>();
         for (String key : state.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(state.get(key));
@@ -57,7 +55,7 @@ public class PointerLatticeElement implements LatticeElement {
 
     public static String getLineNumber(Stmt st) {
         List<Tag> tags = st.getTags();
-        return tags.get(tags.size() - 1).toString();
+        return String.format("%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
     }
 
     @Override
@@ -93,76 +91,149 @@ public class PointerLatticeElement implements LatticeElement {
     public LatticeElement tf_assignstmt(Stmt st) {
         // no actual assignments happening example virtual invoke
 
-        if (st.getDefBoxes().isEmpty()) {
-            return this;
-        }
+        LatticeElement result = new PointerLatticeElement(State);
 
-        // do nothing for identity or noop statements
-        if (st.getClass().equals(JIdentityStmt.class) || st.getClass().equals(JNopStmt.class))
-            return this;
-        // Handle Assignment statements here
-        Value lhs = ((AssignStmt) st).getLeftOp();
-        Value rhs = ((AssignStmt) st).getRightOp();
-        // Idenitty if rhs is static, or if lhs is a primitive type
-        if (rhs.getClass().equals(StaticFieldRef.class) || !lhs.getType().getClass().equals(RefType.class))
-            return this;
-        // TODO: Modify the below logic to handle all cases
-        // If lhs is class.field: TODO: handle for rhs as well
-        if (lhs.getClass().equals(JInstanceFieldRef.class)) {
-            String baseClass = ((JInstanceFieldRef) lhs).getBase().toString();
-            for (String val : this.State.get(baseClass)) {
-                String key = val + "." + ((JInstanceFieldRef) lhs).getField().getName();
-                if (rhs.getClass().equals(JNewExpr.class))
-                    this.State.put(key, this.State.get(rhs.toString()));
-                else
-                    this.State.put(key, this.State.get(rhs.toString()));
-            }
-        } else {
-            // Use hash code for new assignments
-            if (rhs.getClass().equals(JNewExpr.class))
-                this.State.get(lhs.toString())
-                        .add("new" + String.format("%02d", Integer.parseInt(st.getTags().get(1).toString())));
-            // If rhs is also a reference then take the map of that reference and assign to
-            // current lhs
-            else if (rhs.getClass().equals(JimpleLocal.class)) {
-                this.State.put(lhs.toString(), State.get(rhs.toString()));
-                // Other cases just add the string to the current map
-            } else {
-                this.State.get(lhs.toString()).add(rhs.toString());
-            }
+        if (st instanceof JAssignStmt) {
+            return tfAssignmentStmt((AssignStmt) st);
         }
-
-        return this;
+        return result;
     }
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        // if (st.getClass().equals(TableSwitchStmt.class))
-        // System.out.println("tableswitch: " + ((TableSwitchStmt)
-        // st).getKey().toString());
-            //System.out.println((b == true)? "trueBranch" : "False Branch "+ this.State);
         if (st instanceof IfStmt) {
-            return ifCond(b, (IfStmt) st);
+            return tfIfStmt(b, (IfStmt) st);
         }
 
         return this;
     }
 
-    private LatticeElement ifCond(boolean condition, IfStmt st) {
+    private LatticeElement tfIfStmt(boolean condition, IfStmt st) {
 
         Value t = st.getCondition();
         Value left = t.getUseBoxes().get(0).getValue();
         Value right = t.getUseBoxes().get(1).getValue();
-        System.out.println((condition == true)? "trueBranch" : "False Branch ");
-        if (condition == true) {
+        if (condition) {
             if (right.getType() instanceof RefType && left.getType() instanceof RefType) {
-                PointerLatticeElement result = new PointerLatticeElement(this.State) ;
+                PointerLatticeElement result = new PointerLatticeElement(this.State);
                 result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
                 result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
                 return (LatticeElement) result;
             }
 
-        } 
+        }
         return this;
     }
+
+    private LatticeElement tfAssignmentStmt(AssignStmt st) {
+        System.out.println("Hit assignment: " + st);
+        PointerLatticeElement result = new PointerLatticeElement(State);
+        Value lhs = st.getLeftOp();
+        Value rhs = st.getRightOp();
+
+        System.out.println(lhs.getClass() + " : " + rhs.getClass());
+
+        // x = new ()
+        if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {
+            result.State.get(lhs.toString()).add("new" + (getLineNumber(st)));
+        }
+        // x = y
+        if (lhs instanceof JimpleLocal && rhs instanceof JimpleLocal) {
+            result.State.put(lhs.toString(), new HashSet<>(result.State.get(rhs.toString())));
+        }
+
+        // x = null
+        if (lhs instanceof JimpleLocal && rhs instanceof NullConstant) {
+            result.State.get(lhs.toString()).add("null");
+        }
+
+        // x.f = null
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof NullConstant) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                String key = pseudoVar + "." + l.getField().getName();
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.get(key).add("null");
+            }
+        }
+
+        // x = y.f
+        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
+            HashSet<String> res = new HashSet<>();
+            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+            for (String pseudoVar : result.State.get(r.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + r.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                res.addAll(result.State.get(key));
+            }
+            result.State.put(lhs.toString(), res);
+        }
+
+        // x.f = y.f
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JInstanceFieldRef) {
+            HashSet<String> res = new HashSet<>();
+            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+            for (String pseudoVar : result.State.get(r.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + r.getField().getName();
+                res.addAll(result.State.get(key));
+            }
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + l.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.put(key, res);
+            }
+        }
+
+        // x.f = new
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JNewExpr) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                String key = pseudoVar + "." + l.getField().getName();
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.get(key).add("new" + getLineNumber(st));
+            }
+        }
+
+        // x.f = y
+        if (lhs instanceof JInstanceFieldRef && rhs instanceof JimpleLocal) {
+            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+            for (String pseudoVar : result.State.get(l.getBase().toString())) {
+                if (pseudoVar == "null") {
+                    continue;
+                }
+                String key = pseudoVar + "." + l.getField().getName();
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, new HashSet<>());
+                }
+                result.State.put(key, result.State.get(rhs.toString()));
+            }
+        }
+
+        return result;
+    }
+
 }
