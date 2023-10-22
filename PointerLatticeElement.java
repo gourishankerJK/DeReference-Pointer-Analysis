@@ -128,6 +128,9 @@ public class PointerLatticeElement implements LatticeElement {
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
+        if (!(lhs.getType() instanceof soot.RefType)) {
+            return result;
+        }
 
         // x = new ()
         if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {

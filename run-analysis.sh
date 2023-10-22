@@ -10,4 +10,4 @@ set -e
 
 
 # XXX you can add / delete / comment / uncomment lines below
-./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "fun4_actual"
+./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "fun6_public"
