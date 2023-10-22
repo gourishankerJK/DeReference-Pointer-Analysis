@@ -12,25 +12,26 @@ import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PointerLatticeElement implements LatticeElement {
-    private HashMap<String, HashSet<String>> State;
+    private Map<String, HashSet<String>> State;
 
     public PointerLatticeElement() {
-        this.State = new HashMap<String, HashSet<String>>();
+        this.State = new TreeMap<String, HashSet<String>>();
     }
 
     public PointerLatticeElement(List<String> variables) {
-        this.State = new HashMap<>();
+        this.State = new TreeMap<>();
         for (String variable : variables) {
             this.State.put(variable, new HashSet<>());
         }
     }
 
-    public PointerLatticeElement(HashMap<String, HashSet<String>> state) {
-        HashMap<String, HashSet<String>> newState = new HashMap<String, HashSet<String>>();
+    public PointerLatticeElement(Map<String, HashSet<String>> state) {
+        TreeMap<String, HashSet<String>> newState = new TreeMap<String, HashSet<String>>();
         for (String key : state.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(state.get(key));
@@ -39,7 +40,7 @@ public class PointerLatticeElement implements LatticeElement {
         this.State = newState;
     }
 
-    public HashMap<String, HashSet<String>> getState() {
+    public Map<String, HashSet<String>> getState() {
         return this.State;
     }
 
@@ -58,9 +59,9 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement join_op(LatticeElement r) {
-        HashMap<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
+        Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
 
-        HashMap<String, HashSet<String>> joinElementState = new HashMap<String, HashSet<String>>();
+        TreeMap<String, HashSet<String>> joinElementState = new TreeMap<String, HashSet<String>>();
 
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
@@ -77,7 +78,7 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public boolean equals(LatticeElement r) {
-        HashMap<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
+        Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
         for (String key : input.keySet()) {
             if (!this.State.get(key).equals(input.get(key)))
                 return false;
@@ -124,12 +125,9 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     private LatticeElement tfAssignmentStmt(AssignStmt st) {
-        System.out.println("Hit assignment: " + st);
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
-
-        System.out.println(lhs.getClass() + " : " + rhs.getClass());
 
         // x = new ()
         if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {

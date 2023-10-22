@@ -4,7 +4,11 @@ public class Kildall {
 
     public static List<ProgramPoint> ComputeLFP(List<ProgramPoint> programPoints) {
         ProgramPoint analysisPoint;
+        int iteration = 0;
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
+            ProgramPoint.PrintProgramPoints(String.format("Kildall iteration %02d: ", iteration++), programPoints);
+            System.out.println("");
+
             Propagate(analysisPoint);
         }
         return programPoints;
@@ -17,7 +21,6 @@ public class Kildall {
         // Unmark and propagate to the successors
         analysisPoint.markedForPropagation = false;
         for (ProgramPoint successor : analysisPoint.successors) {
-            System.out.println("\t" + successor.statement.toString());
             LatticeElement joinElement;
 
             if (analysisPoint.statement.branches()) {
