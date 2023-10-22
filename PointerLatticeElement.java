@@ -177,30 +177,6 @@ public class PointerLatticeElement implements LatticeElement {
             result.State.put(lhs.toString(), res);
         }
 
-        // x.f = y.f
-        if (lhs instanceof JInstanceFieldRef && rhs instanceof JInstanceFieldRef) {
-            HashSet<String> res = new HashSet<>();
-            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
-            for (String pseudoVar : result.State.get(r.getBase().toString())) {
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                String key = pseudoVar + "." + r.getField().getName();
-                res.addAll(result.State.get(key));
-            }
-            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
-            for (String pseudoVar : result.State.get(l.getBase().toString())) {
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                String key = pseudoVar + "." + l.getField().getName();
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, new HashSet<>());
-                }
-                result.State.put(key, res);
-            }
-        }
-
         // x.f = new
         if (lhs instanceof JInstanceFieldRef && rhs instanceof JNewExpr) {
             JInstanceFieldRef l = (JInstanceFieldRef) lhs;
@@ -224,10 +200,8 @@ public class PointerLatticeElement implements LatticeElement {
                     continue;
                 }
                 String key = pseudoVar + "." + l.getField().getName();
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, new HashSet<>());
-                }
-                result.State.put(key, result.State.get(rhs.toString()));
+                HashSet<String> updatedMap = new HashSet<>(result.State.get(rhs.toString()));
+                result.State.put(key, updatedMap);
             }
         }
 
