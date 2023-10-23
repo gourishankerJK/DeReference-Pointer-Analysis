@@ -1,0 +1,10 @@
+methodname: fun2
+00:         i0 := @parameter0: int
+01:         $r0 = new BasicTest
+02:         specialinvoke $r0.<BasicTest: void <init>()>()
+03:         if i0 <= 10 goto label1
+04:         r1 = null
+05:         goto label2
+06:         r1 = $r0
+07:         virtualinvoke r1.<java.lang.Object: java.lang.String toString()>()
+08:         return

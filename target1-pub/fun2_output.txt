@@ -1,0 +1,10 @@
+BasicTest.fun2: in02: $r0: {new01}
+BasicTest.fun2: in03: $r0: {new01}
+BasicTest.fun2: in04: $r0: {new01}
+BasicTest.fun2: in05: $r0: {new01}
+BasicTest.fun2: in05: r1: {null}
+BasicTest.fun2: in06: $r0: {new01}
+BasicTest.fun2: in07: $r0: {new01}
+BasicTest.fun2: in07: r1:  {new01, null}
+BasicTest.fun2: in08: $r0: {new01}
+BasicTest.fun2: in08: r1: {new01, null}

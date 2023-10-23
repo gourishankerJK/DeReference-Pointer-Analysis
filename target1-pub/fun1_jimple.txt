@@ -1,0 +1,7 @@
+methodname: fun1
+00:         $r0 = new BasicTest
+01:         specialinvoke $r0.<BasicTest: void <init>()>()
+02:         $r1 = new BasicTest
+03:         specialinvoke $r1.<BasicTest: void <init>()>()
+04:         $r1.<BasicTest: BasicTest f> = $r0
+05:         return
