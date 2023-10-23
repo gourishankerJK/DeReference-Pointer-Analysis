@@ -85,7 +85,6 @@ public class Analysis extends PAVBase {
 
         if (methodFound) {
             printInfo(targetMethod);
-            Kildall kildall = new Kildall();
             /*************************************************************
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
@@ -94,7 +93,7 @@ public class Analysis extends PAVBase {
             IPreProcess preProcess = new PointerLatticePreProcess();
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
             List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
-            ProgramPoint.PrintProgramPoints(result);
+            ProgramPoint.PrintProgramPoints(tClass + "." + tMethod, result);
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
@@ -105,7 +104,6 @@ public class Analysis extends PAVBase {
         if (!entryMethod.isPhantom() && entryMethod.isConcrete()) {
             Body body = entryMethod.retrieveActiveBody();
             ExceptionalUnitGraph graph = new ExceptionalUnitGraph(body);
-            // ExceptionalBlockGraph graph = new ExceptionalBlockGraph (body);
 
             CFGToDotGraph cfgForMethod = new CFGToDotGraph();
             cfgForMethod.drawCFG(graph);

@@ -12,7 +12,7 @@ import soot.toolkits.graph.ExceptionalUnitGraph;
 
 public class PointerLatticePreProcess implements IPreProcess {
 
-    public  List<ProgramPoint> PreProcess(Body body) {
+    public List<ProgramPoint> PreProcess(Body body) {
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
         HashMap<Unit, ProgramPoint> mp = new HashMap<>();
         List<String> variables = GetRefTypeVariables(body);
@@ -35,7 +35,7 @@ public class PointerLatticePreProcess implements IPreProcess {
         }
         return result;
     }
-   
+
     public static List<String> GetRefTypeVariables(Body body) {
         List<String> result = new ArrayList<String>();
         for (Local local : body.getLocals()) {
