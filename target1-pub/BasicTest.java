@@ -4,9 +4,9 @@ public class BasicTest {
     BasicTest f;
 
     static void fun1() throws IOException {
-        BasicTest v1 = null;
-        BasicTest v2 = new BasicTest();
-        if (v1 == v2) {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = v1;
+        if (null == null) {
             v1 = v2;
         } else {
             v1 = null;

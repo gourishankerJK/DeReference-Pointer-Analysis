@@ -285,23 +285,26 @@ public class PointerLatticeElement implements LatticeElement {
 
     private LatticeElement handleConditionTrueOneNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
-        if (this.State.get(value.toString()).contains("null")) {
-            result.State.get(value.toString()).retainAll(Collections.singleton("null"));
-        }
-
-        return result;
+        result.State.get(value.toString()).retainAll(Collections.singleton("null"));
+        return (LatticeElement) result;
     }
 
     private LatticeElement handleConditionFalseOneNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
-        if (this.State.get(value.toString()).contains("null")) {
-            result.State.get(value.toString()).removeAll((Collections.singleton("null")));
-        }
-        return result;
+        result.State.get(value.toString()).removeAll((Collections.singleton("null")));
+        return (LatticeElement) result;
     }
 
     private boolean isReferenceType(Type type) {
         return type instanceof RefType;
+    }
+
+    private boolean isEqCond(Value value) {
+        return value instanceof EqExpr;
+    }
+
+    private boolean isNEqCond(Value value) {
+        return value instanceof NeExpr;
     }
 
     private boolean isNullType(Type type) {
@@ -312,49 +315,48 @@ public class PointerLatticeElement implements LatticeElement {
         Value t = st.getCondition();
         Value left = t.getUseBoxes().get(0).getValue();
         Value right = t.getUseBoxes().get(1).getValue();
-        System.out.println("Type :" + t);
 
+        // Both right and left are Reference Type
         if (isReferenceType(right.getType()) && isReferenceType(left.getType())) {
-            System.out.println("Both right and left Reference Type");
             return handleReferenceType(condition, t, left, right);
-        } else if (isNullType(right.getType()) && isReferenceType(left.getType())) {
-            System.out.println("Only left Reference Type");
+        }
+        // Only Right is reference type
+        else if (isNullType(right.getType()) && isReferenceType(left.getType())) {
+
             return handleNullType(condition, t, left);
-        } else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
-            System.out.println("Only right Reference Type");
+        }
+        // Only left is reference Type
+        else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
             return handleNullType(condition, t, right);
+        }
+        // Both of them are Null 
+        else if (isNullType(left.getType()) && isNullType(right.getType())) {
+            return handleBothNullType(t, condition);
         }
 
         return new PointerLatticeElement(this.State);
     }
 
     private LatticeElement handleReferenceType(boolean condition, Value t, Value left, Value right) {
-        if (t instanceof EqExpr) {
-            if (condition == true) {
-                return handleConditionTrueNonNull(left, right);
-            }
-        } else if (t instanceof NeExpr) {
-            if (condition == false) {
-                return handleConditionTrueNonNull(left, right);
-            }
+        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
+            return handleConditionTrueNonNull(left, right);
         }
         return new PointerLatticeElement(this.State);
     }
 
     private LatticeElement handleNullType(boolean condition, Value t, Value value) {
-        if (t instanceof EqExpr) {
-            if (condition == true) {
-                return handleConditionTrueOneNull(value);
-            } else {
-                return handleConditionFalseOneNull(value);
-            }
-        } else if (t instanceof NeExpr) {
-            if (condition == false) {
-                return handleConditionTrueOneNull(value);
-            } else {
-                return handleConditionFalseOneNull(value);
-            }
+        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
+            return handleConditionTrueOneNull(value);
+        } else if ((isEqCond(t) && condition == false) || (isNEqCond(t) && condition == true)) {
+            return handleConditionFalseOneNull(value);
         }
         return new PointerLatticeElement(this.State);
+    }
+
+    private LatticeElement handleBothNullType(Value t, boolean condition) {
+        if ((isEqCond(t) && (condition == true)) || (isNEqCond(t) && (condition == false))) {
+            return new PointerLatticeElement(this.State);
+        }
+        return new PointerLatticeElement();
     }
 }
