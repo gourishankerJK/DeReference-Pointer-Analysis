@@ -6,8 +6,8 @@ public class Kildall {
         ProgramPoint analysisPoint;
         int iteration = 0;
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
-            ProgramPoint.PrintProgramPoints(String.format("Kildall iteration %02d: ", iteration++), programPoints);
-            System.out.println("");
+           // ProgramPoint.PrintProgramPoints(String.format("Kildall iteration %02d: ", iteration++), programPoints);
+          //  System.out.println("");
 
             Propagate(analysisPoint);
         }
@@ -25,7 +25,7 @@ public class Kildall {
 
             if (analysisPoint.statement.branches()) {
                 joinElement = successor.latticeElement
-                        .join_op(analysisPoint.latticeElement.tf_condstmt(i == 0, analysisPoint.statement));
+                        .join_op(analysisPoint.latticeElement.tf_condstmt(i == 1, analysisPoint.statement));
             } else {
                 joinElement = successor.latticeElement
                         .join_op(analysisPoint.latticeElement.tf_assignstmt(analysisPoint.statement));

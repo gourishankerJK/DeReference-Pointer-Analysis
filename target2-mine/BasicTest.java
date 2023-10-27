@@ -1,6 +1,27 @@
 public class BasicTest {
     BasicTest f;
 
+    static void MyTest() {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        int value = 1;
+        switch (value) {
+            case 1:
+                v1 = new BasicTest();
+                v1 = v2;
+                break;
+            case 2:
+                v2 = null;
+                break;
+            case 3:
+                v2 = new BasicTest();
+                break;
+            default:
+                v1 = v2;
+        }
+        v1 = v2;
+    }
+
     static void fun1() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();

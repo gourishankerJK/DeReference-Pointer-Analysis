@@ -19,6 +19,7 @@ public class PointerLatticePreProcess implements IPreProcess {
         ExceptionalUnitGraph graph = new ExceptionalUnitGraph(body);
         int lineno = 0;
         // Initial pass to create list of program points
+        System.out.println(body);
         for (Unit unit : body.getUnits()) {
             unit.addTag(new LineNumberTag(lineno++));
             ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true);
