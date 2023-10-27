@@ -4,6 +4,7 @@ import soot.Local;
 import soot.NullType;
 import soot.RefType;
 import soot.Type;
+import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
@@ -200,34 +201,6 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
-    // @Override
-    // public LatticeElement tf_assignstmt(Stmt st) {
-    // if (st instanceof AssignStmt) {
-    // Value leftValue = ((AssignStmt) st).getLeftOp();
-    // Value rightValue = ((AssignStmt) st).getRightOp();
-
-    // System.out.println((leftValue instanceof InstanceFieldRef) == true);
-    // if (rightValue instanceof Constant) {
-    // // System.out.println("Constant Assignment");
-    // } else if (leftValue instanceof Local && rightValue instanceof Local) {
-    // // System.out.println("Local-to-Local Assignment");
-    // } else if (leftValue instanceof InstanceFieldRef) {
-    // InstanceFieldRef fieldRef = (InstanceFieldRef) leftValue;
-    // String fieldName = fieldRef.getField().getName();
-    // String className = fieldRef.getField().getDeclaringClass().getName();
-    // String variableName = ((InstanceFieldRef) fieldRef).getBase().toString();
-    // System.out.println(variableName + "." + className + "." + fieldName);
-    // } else if (leftValue instanceof ArrayRef) {
-    // System.out.println("Array Assignment");
-    // } else {
-    // System.out.println("Unknown Assignment");
-    // }
-    // } else {
-    // System.out.println("Not an Assignment Statement");
-    // }
-    // return this;
-    // }
-
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         if (st instanceof IfStmt) {
@@ -236,6 +209,17 @@ public class PointerLatticeElement implements LatticeElement {
             System.out.println("LookupSwitch Statement");
         } else if (st instanceof TableSwitchStmt) {
             System.out.println("TableSwitch Statement");
+            TableSwitchStmt tableSwitchStmt = (TableSwitchStmt) st;
+            int lowIndex = tableSwitchStmt.getLowIndex();
+            int highIndex = tableSwitchStmt.getHighIndex();
+
+            for (int i = lowIndex; i < highIndex; i++) {
+                Unit target = tableSwitchStmt.getTarget(i);
+                System.out.println("Case " + i + ": " + target.toString());
+            }
+
+            Unit defaultTarget = tableSwitchStmt.getDefaultTarget();
+            System.out.println("Default case: " + defaultTarget);
         } else if (st instanceof IfStmt && st.getUnitBoxes().size() > 1) {
             System.out.println("If Statement with Goto");
         } // Not possible in our case ; If statement with NOP
@@ -246,29 +230,11 @@ public class PointerLatticeElement implements LatticeElement {
                 && st.getUnitBoxes().get(0).getUnit() instanceof ReturnStmt) {
             System.out.println("If Statement with Return");
         } else {
+            System.out.println(st);
             System.out.println("Unknown Conditional Statement");
         }
 
         return this;
-    }
-
-    private LatticeElement handleConditionTrueNonNull(Value left, Value right) {
-        PointerLatticeElement result = new PointerLatticeElement(this.State);
-        result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
-        result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
-        return (LatticeElement) result;
-    }
-
-    private LatticeElement handleConditionTrueOneNull(Value value) {
-        PointerLatticeElement result = new PointerLatticeElement(this.State);
-        result.State.get(value.toString()).retainAll(Collections.singleton("null"));
-        return (LatticeElement) result;
-    }
-
-    private LatticeElement handleConditionFalseOneNull(Value value) {
-        PointerLatticeElement result = new PointerLatticeElement(this.State);
-        result.State.get(value.toString()).removeAll((Collections.singleton("null")));
-        return (LatticeElement) result;
     }
 
     private boolean isReferenceType(Type type) {
@@ -285,6 +251,69 @@ public class PointerLatticeElement implements LatticeElement {
 
     private boolean isNullType(Type type) {
         return type.equals(NullType.v());
+    }
+
+    private LatticeElement handleConditionTrueNonNull(Value left, Value right) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
+        result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
+        return (LatticeElement) result;
+    }
+
+    private LatticeElement handleConditionTrueOneNull(Value value) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        // send empty if doesn't contain null;
+        if (!this.State.get(value.toString()).contains("null")) {
+            for (String key : this.State.keySet()) {
+                result.State.get(key).clear();
+            }
+        }
+        // send only null;
+        else {
+            result.State.get(value.toString()).retainAll(Collections.singleton("null"));
+        }
+        return (LatticeElement) result;
+    }
+
+    private LatticeElement handleConditionFalseOneNull(Value value) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        // send empty if contains null;
+        if (this.State.get(value.toString()).contains("null")) {
+            // if it contains only NUll , send \bot
+            if (this.State.get(value.toString()).size() == 1) {
+                for (String key : this.State.keySet()) {
+                    result.State.get(key).clear();
+                }
+                // else filter out null
+            } else {
+                result.State.get(value.toString()).removeAll(Collections.singleton("null"));
+            }
+        }
+        return (LatticeElement) result;
+    }
+
+    private LatticeElement handleReferenceType(boolean condition, Value t, Value left, Value right) {
+        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
+            return handleConditionTrueNonNull(left, right);
+        }
+        return new PointerLatticeElement(this.State);
+    }
+
+    private LatticeElement handleNullType(boolean condition, Value t, Value value) {
+        if (isEqCond(t)) {
+            if (condition == true) {
+                return handleConditionTrueOneNull(value);
+            } else {
+                return handleConditionFalseOneNull(value);
+            }
+        } else if (isNEqCond(t)) {
+            if (condition == true) {
+                return handleConditionFalseOneNull(value);
+            } else {
+                return handleConditionTrueOneNull(value);
+            }
+        }
+        return new PointerLatticeElement(this.State);
     }
 
     private LatticeElement handleIfCondition(boolean condition, IfStmt st) {
@@ -305,34 +334,9 @@ public class PointerLatticeElement implements LatticeElement {
         else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
             return handleNullType(condition, t, right);
         }
-        // Both of them are Null 
-        else if (isNullType(left.getType()) && isNullType(right.getType())) {
-            return handleBothNullType(t, condition);
-        }
+       
 
         return new PointerLatticeElement(this.State);
     }
 
-    private LatticeElement handleReferenceType(boolean condition, Value t, Value left, Value right) {
-        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
-            return handleConditionTrueNonNull(left, right);
-        }
-        return new PointerLatticeElement(this.State);
-    }
-
-    private LatticeElement handleNullType(boolean condition, Value t, Value value) {
-        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
-            return handleConditionTrueOneNull(value);
-        } else if ((isEqCond(t) && condition == false) || (isNEqCond(t) && condition == true)) {
-            return handleConditionFalseOneNull(value);
-        }
-        return new PointerLatticeElement(this.State);
-    }
-
-    private LatticeElement handleBothNullType(Value t, boolean condition) {
-        if ((isEqCond(t) && (condition == true)) || (isNEqCond(t) && (condition == false))) {
-            return new PointerLatticeElement(this.State);
-        }
-        return new PointerLatticeElement();
-    }
 }
