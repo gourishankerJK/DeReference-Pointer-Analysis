@@ -7,6 +7,8 @@
 // 2) https://github.com/soot-oss/soot/wiki/Tutorials
 
 ////////////////////////////////////////////////////////////////////////////////
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 import polyglot.ast.Precedence;
@@ -37,8 +39,7 @@ public class Analysis extends PAVBase {
          ************************************************************/
     }
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws IOException {
         String targetDirectory = args[0];
         String mClass = args[1];
         String tClass = args[2];
@@ -89,15 +90,52 @@ public class Analysis extends PAVBase {
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
              *************************************************************/
-            // Compute Least fix point using Kildall's algorithms
+            // Preprocess for the pointer lattice element
             IPreProcess preProcess = new PointerLatticePreProcess();
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
+
+            // Compute Least fix point using Kildall's algorithms
             List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
-            ProgramPoint.PrintProgramPoints(tClass + "." + tMethod, result);
+
+            // Format the data according to required output
+            Set<ResultTuple> resultFormatted = getFormattedResult(result, tMethod);
+            String[] output = fmtOutputData(resultFormatted, tClass + ".");
+            for (String line : output) {
+                System.out.println(line);
+            }
+
+            // Write the same thing to the file
+            FileWriter fileWriter = new FileWriter("Result_" + tMethod + ".txt");
+            for (String str : output) {
+                fileWriter.write(str + System.lineSeparator());
+            }
+            fileWriter.close();
+
+
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
         }
+    }
+
+    private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
+        Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
+        int lineNumber = 0;
+        for (ProgramPoint programPoint : result) {
+            Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.latticeElement).getState();
+            for (String key: state.keySet()) {
+                if (state.get(key).size() == 0) continue;
+
+                List<String> varList = new ArrayList<String>(state.get(key));
+                Collections.sort(varList);
+
+                ResultTuple tuple = new ResultTuple(method, String.format("in%02d", lineNumber), key, varList);
+                resultFormatted.add(tuple);
+            }
+            lineNumber++;
+        }
+
+        return resultFormatted;
     }
 
     private static void drawMethodDependenceGraph(SootMethod entryMethod) {

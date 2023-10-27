@@ -194,7 +194,10 @@ public class PointerLatticeElement implements LatticeElement {
                 }
                 String key = pseudoVar + "." + l.getField().getName();
                 HashSet<String> updatedMap = new HashSet<>(result.State.get(rhs.toString()));
-                result.State.put(key, updatedMap);
+                if (!result.State.containsKey(key)) {
+                    result.State.put(key, updatedMap);
+                }
+                result.State.get(key).addAll(updatedMap);
             }
         }
 
@@ -205,36 +208,9 @@ public class PointerLatticeElement implements LatticeElement {
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         if (st instanceof IfStmt) {
             return handleIfCondition(b, (IfStmt) st);
-        } else if (st instanceof LookupSwitchStmt) {
-            System.out.println("LookupSwitch Statement");
-        } else if (st instanceof TableSwitchStmt) {
-            System.out.println("TableSwitch Statement");
-            TableSwitchStmt tableSwitchStmt = (TableSwitchStmt) st;
-            int lowIndex = tableSwitchStmt.getLowIndex();
-            int highIndex = tableSwitchStmt.getHighIndex();
+        } 
 
-            for (int i = lowIndex; i < highIndex; i++) {
-                Unit target = tableSwitchStmt.getTarget(i);
-                System.out.println("Case " + i + ": " + target.toString());
-            }
-
-            Unit defaultTarget = tableSwitchStmt.getDefaultTarget();
-            System.out.println("Default case: " + defaultTarget);
-        } else if (st instanceof IfStmt && st.getUnitBoxes().size() > 1) {
-            System.out.println("If Statement with Goto");
-        } // Not possible in our case ; If statement with NOP
-        else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
-                && st.getUnitBoxes().get(0).getUnit() instanceof NopStmt) {
-            System.out.println("If Statement with Nop");
-        } else if (st instanceof IfStmt && st.getUnitBoxes().size() == 1
-                && st.getUnitBoxes().get(0).getUnit() instanceof ReturnStmt) {
-            System.out.println("If Statement with Return");
-        } else {
-            System.out.println(st);
-            System.out.println("Unknown Conditional Statement");
-        }
-
-        return this;
+        return new PointerLatticeElement(this.State);
     }
 
     private boolean isReferenceType(Type type) {
