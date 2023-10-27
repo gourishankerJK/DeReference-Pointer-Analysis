@@ -1,0 +1,73 @@
+BasicTest.fun7_public: in03: r3: {null}
+BasicTest.fun7_public: in04: $r4: {new04}
+BasicTest.fun7_public: in04: r3: {new04, null}
+BasicTest.fun7_public: in05: $r4: {new04}
+BasicTest.fun7_public: in05: r3: {new04, null}
+BasicTest.fun7_public: in06: $r4: {new04}
+BasicTest.fun7_public: in06: r3: {new04, null}
+BasicTest.fun7_public: in07: $r4: {new04}
+BasicTest.fun7_public: in07: r3: {new04, null}
+BasicTest.fun7_public: in08: $r4: {new04}
+BasicTest.fun7_public: in08: r3: {new04, null}
+BasicTest.fun7_public: in09: $r4: {new04}
+BasicTest.fun7_public: in09: r3: {new04, null}
+BasicTest.fun7_public: in10: $r4: {new04}
+BasicTest.fun7_public: in10: r3: {new04, null}
+BasicTest.fun7_public: in11: $r4: {new04}
+BasicTest.fun7_public: in11: r3: {new04, null}
+BasicTest.fun7_public: in12: $r4: {new04}
+BasicTest.fun7_public: in12: r3: {new04, null}
+BasicTest.fun7_public: in13: $r4: {new04}
+BasicTest.fun7_public: in13: r3: {new04, null}
+BasicTest.fun7_public: in14: $r0: {new13}
+BasicTest.fun7_public: in14: $r4: {new04}
+BasicTest.fun7_public: in14: r3: {new04, null}
+BasicTest.fun7_public: in15: $r0: {new13}
+BasicTest.fun7_public: in15: $r4: {new04}
+BasicTest.fun7_public: in15: r3: {new04, null}
+BasicTest.fun7_public: in16: $r0: {new13}
+BasicTest.fun7_public: in16: $r4: {new04}
+BasicTest.fun7_public: in16: new04.f: {new13}
+BasicTest.fun7_public: in16: r3: {new04, null}
+BasicTest.fun7_public: in17: $r0: {new13}
+BasicTest.fun7_public: in17: $r4: {new04}
+BasicTest.fun7_public: in17: new04.f: {new13}
+BasicTest.fun7_public: in17: r3: {new04, null}
+BasicTest.fun7_public: in18: $r0: {new13}
+BasicTest.fun7_public: in18: $r2: {new17}
+BasicTest.fun7_public: in18: $r4: {new04}
+BasicTest.fun7_public: in18: new04.f: {new13}
+BasicTest.fun7_public: in18: r3: {new04, null}
+BasicTest.fun7_public: in19: $r0: {new13}
+BasicTest.fun7_public: in19: $r2: {new17}
+BasicTest.fun7_public: in19: $r4: {new04}
+BasicTest.fun7_public: in19: new04.f: {new13}
+BasicTest.fun7_public: in19: r3: {new04, null}
+BasicTest.fun7_public: in20: $r0: {new13}
+BasicTest.fun7_public: in20: $r2: {new17}
+BasicTest.fun7_public: in20: $r4: {new04}
+BasicTest.fun7_public: in20: new04.f: {new13, new17}
+BasicTest.fun7_public: in20: r3: {new04, null}
+BasicTest.fun7_public: in21: $r0: {new13}
+BasicTest.fun7_public: in21: $r2: {new17}
+BasicTest.fun7_public: in21: $r4: {new04}
+BasicTest.fun7_public: in21: new04.f: {new13, new17}
+BasicTest.fun7_public: in21: r3: {new04}
+BasicTest.fun7_public: in22: $r0: {new13}
+BasicTest.fun7_public: in22: $r1: {new21}
+BasicTest.fun7_public: in22: $r2: {new17}
+BasicTest.fun7_public: in22: $r4: {new04}
+BasicTest.fun7_public: in22: new04.f: {new13, new17}
+BasicTest.fun7_public: in22: r3: {new04}
+BasicTest.fun7_public: in23: $r0: {new13}
+BasicTest.fun7_public: in23: $r1: {new21}
+BasicTest.fun7_public: in23: $r2: {new17}
+BasicTest.fun7_public: in23: $r4: {new04}
+BasicTest.fun7_public: in23: new04.f: {new13, new17}
+BasicTest.fun7_public: in23: r3: {new04}
+BasicTest.fun7_public: in24: $r0: {new13}
+BasicTest.fun7_public: in24: $r1: {new21}
+BasicTest.fun7_public: in24: $r2: {new17}
+BasicTest.fun7_public: in24: $r4: {new04}
+BasicTest.fun7_public: in24: new04.f: {new13, new17, new21}
+BasicTest.fun7_public: in24: r3: {new04, null}

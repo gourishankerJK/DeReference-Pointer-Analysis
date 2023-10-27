@@ -4,11 +4,7 @@ public class Kildall {
 
     public static List<ProgramPoint> ComputeLFP(List<ProgramPoint> programPoints) {
         ProgramPoint analysisPoint;
-        int iteration = 0;
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
-           // ProgramPoint.PrintProgramPoints(String.format("Kildall iteration %02d: ", iteration++), programPoints);
-          //  System.out.println("");
-
             Propagate(analysisPoint);
         }
         return programPoints;
