@@ -11,8 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-import polyglot.ast.Precedence;
-
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;

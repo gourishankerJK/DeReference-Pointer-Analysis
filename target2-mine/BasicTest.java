@@ -1,25 +1,21 @@
 public class BasicTest {
     BasicTest f;
 
-    static void MyTest() {
+    static public BasicTest f() {
+        return new BasicTest();
+    }
+
+    public BasicTest g() {
+        return new BasicTest();
+    }
+
+    void MyTest() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        int value = 1;
-        switch (value) {
-            case 1:
-                v1 = new BasicTest();
-                v1 = v2;
-                break;
-            case 2:
-                v2 = null;
-                break;
-            case 3:
-                v2 = new BasicTest();
-                break;
-            default:
-                v1 = v2;
-        }
-        v1 = v2;
+        v2 = v1;
+
+        BasicTest v3 = f();
+        v3.f = v1.f = v2.f = g();
     }
 
     static void fun1() {
@@ -82,17 +78,14 @@ public class BasicTest {
         v4 = v1.f;
     }
 
-    static void fun3_public(int value)
-    {
+    static void fun3_public(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v2;
-        if(value <= 100)
-        {
-        v2.f = v1;
-        }
-        else
-        v2.f = null;
+        if (value <= 100) {
+            v2.f = v1;
+        } else
+            v2.f = null;
         // Situation 4 partially -- union for an object field
     }
 
@@ -145,7 +138,7 @@ public class BasicTest {
             v2.f = new BasicTest(); // reachable
     }
 
-        static void fun7_public(int value, int n) {
+    static void fun7_public(int value, int n) {
         BasicTest v1, v2 = null;
         int old = value;
         if (null != null) {

@@ -1,35 +1,24 @@
 import java.util.HashSet;
 
-import soot.Local;
 import soot.NullType;
 import soot.RefType;
 import soot.Type;
-import soot.Unit;
 import soot.Value;
-import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
-import soot.jimple.CmpExpr;
-import soot.jimple.Constant;
 import soot.jimple.EqExpr;
-import soot.jimple.FieldRef;
 import soot.jimple.IfStmt;
-import soot.jimple.InstanceFieldRef;
-import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NeExpr;
-import soot.jimple.NopStmt;
 import soot.jimple.NullConstant;
-import soot.jimple.ReturnStmt;
-import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
+import soot.jimple.internal.JStaticInvokeExpr;
+import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -113,6 +102,7 @@ public class PointerLatticeElement implements LatticeElement {
         if (st instanceof JAssignStmt) {
             return tfAssignmentStmt((AssignStmt) st);
         }
+
         return result;
     }
 
@@ -120,12 +110,15 @@ public class PointerLatticeElement implements LatticeElement {
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
+        System.out.println("Operands " + lhs + " " + rhs.getClass());
+
         if (!(lhs.getType() instanceof soot.RefType)) {
             return result;
         }
 
         // x = new ()
-        if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {
+        if (lhs instanceof JimpleLocal && (rhs instanceof JNewExpr || (rhs instanceof JStaticInvokeExpr)
+                || (rhs instanceof JVirtualInvokeExpr))) {
             result.State.get(lhs.toString()).add("new" + (getLineNumber(st)));
         }
         // x = y
@@ -208,7 +201,7 @@ public class PointerLatticeElement implements LatticeElement {
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         if (st instanceof IfStmt) {
             return handleIfCondition(b, (IfStmt) st);
-        } 
+        }
 
         return new PointerLatticeElement(this.State);
     }
@@ -310,7 +303,6 @@ public class PointerLatticeElement implements LatticeElement {
         else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
             return handleNullType(condition, t, right);
         }
-       
 
         return new PointerLatticeElement(this.State);
     }
