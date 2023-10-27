@@ -82,6 +82,20 @@ public class BasicTest {
         v4 = v1.f;
     }
 
+    static void fun3_public(int value)
+    {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        v2.f = v2;
+        if(value <= 100)
+        {
+        v2.f = v1;
+        }
+        else
+        v2.f = null;
+        // Situation 4 partially -- union for an object field
+    }
+
     static void fun4_public(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
@@ -117,6 +131,26 @@ public class BasicTest {
     static void fun6_public(int value, int n) {
         BasicTest v1, v2 = null;
         int old = value;
+        do {
+            v1 = new BasicTest();
+            if (value % 2 == 0) {
+                v2 = v1;
+            }
+            value++;
+        } while (value - old < 2 || value < n);
+        v2.f = new BasicTest();
+        if (v1 == null)
+            v2.f = new BasicTest(); // unreachable
+        if (v1 != v2)
+            v2.f = new BasicTest(); // reachable
+    }
+
+        static void fun7_public(int value, int n) {
+        BasicTest v1, v2 = null;
+        int old = value;
+        if (null != null) {
+            v1 = new BasicTest();
+        }
         do {
             v1 = new BasicTest();
             if (value % 2 == 0) {

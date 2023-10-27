@@ -28,8 +28,14 @@ public class PAVBase {
     protected static String fmtOutputLine(ResultTuple tup, String prefix) {
         String line = tup.m + ": " + tup.p + ": " + tup.v + ": " + "{";
         List<String> pointerValues = tup.pV;
+        int current = 0;
         for(String pointers: pointerValues){
-            line += pointers+", ";
+            if (current < (pointerValues.size() - 1)) {
+                line += pointers+", ";
+            } else {
+                line += pointers;
+            }
+            current++;
         }
         line= line+"}";
         return (prefix + line);
