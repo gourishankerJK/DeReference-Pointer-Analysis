@@ -1,35 +1,22 @@
 import java.util.HashSet;
-
-import soot.Local;
 import soot.NullType;
 import soot.RefType;
 import soot.Type;
-import soot.Unit;
 import soot.Value;
-import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
-import soot.jimple.CmpExpr;
-import soot.jimple.Constant;
 import soot.jimple.EqExpr;
-import soot.jimple.FieldRef;
 import soot.jimple.IfStmt;
-import soot.jimple.InstanceFieldRef;
-import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NeExpr;
-import soot.jimple.NopStmt;
 import soot.jimple.NullConstant;
-import soot.jimple.ReturnStmt;
-import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
+import soot.jimple.internal.JStaticInvokeExpr;
+import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
-
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -113,6 +100,7 @@ public class PointerLatticeElement implements LatticeElement {
         if (st instanceof JAssignStmt) {
             return tfAssignmentStmt((AssignStmt) st);
         }
+
         return result;
     }
 
@@ -120,12 +108,15 @@ public class PointerLatticeElement implements LatticeElement {
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
+        System.out.println("Operands " + lhs + " " + rhs.getClass());
+
         if (!(lhs.getType() instanceof soot.RefType)) {
             return result;
         }
 
         // x = new ()
-        if (lhs instanceof JimpleLocal && rhs instanceof JNewExpr) {
+        if (lhs instanceof JimpleLocal && (rhs instanceof JNewExpr || (rhs instanceof JStaticInvokeExpr)
+                || (rhs instanceof JVirtualInvokeExpr))) {
             result.State.get(lhs.toString()).add("new" + (getLineNumber(st)));
         }
         // x = y
@@ -204,41 +195,71 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
+    /**
+     * Evaluates a conditional statement in the program.
+     *
+     * @param b  The boolean condition of the statement
+     * @param st The statement to be evaluated
+     * @return The lattice element representing the result of the evaluation
+     */
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
         if (st instanceof IfStmt) {
             return handleIfCondition(b, (IfStmt) st);
-        } 
+        }
 
         return new PointerLatticeElement(this.State);
     }
 
+    /**
+     * Checks if the given type is a reference type.
+     *
+     * @param type The type to check
+     * @return True if the type is a reference type, false otherwise
+     */
     private boolean isReferenceType(Type type) {
         return type instanceof RefType;
     }
 
+    /**
+     * Checks if the given value is an instance of the EqExpr class.
+     *
+     * @param value The value to check.
+     * @return True if the value is an instance of EqExpr, false otherwise.
+     */
     private boolean isEqCond(Value value) {
         return value instanceof EqExpr;
     }
 
+    /**
+     * Checks if the given value is an instance of the NeExpr class.
+     *
+     * @param value The value to check.
+     * @return True if the value is an instance of NeExpr, false otherwise.
+     */
     private boolean isNEqCond(Value value) {
         return value instanceof NeExpr;
     }
 
+    /**
+     * Checks if the given Type object is of NullType.
+     *
+     * @param type The Type object to check.
+     * @return true if the Type object is of NullType, false otherwise.
+     */
     private boolean isNullType(Type type) {
         return type.equals(NullType.v());
     }
 
-    private LatticeElement handleConditionTrueNonNull(Value left, Value right) {
+    /**
+     * Handles the true branch when the value is null.
+     *
+     * @param value The value to handle
+     * @return The resulting lattice element after handling the true branch
+     */
+    private LatticeElement handleTrueBranchWithNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
-        result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
-        result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
-        return (LatticeElement) result;
-    }
-
-    private LatticeElement handleConditionTrueOneNull(Value value) {
-        PointerLatticeElement result = new PointerLatticeElement(this.State);
-        // send empty if doesn't contain null;
+        // send empty if doesn'operation contain null;
         if (!this.State.get(value.toString()).contains("null")) {
             for (String key : this.State.keySet()) {
                 result.State.get(key).clear();
@@ -251,7 +272,13 @@ public class PointerLatticeElement implements LatticeElement {
         return (LatticeElement) result;
     }
 
-    private LatticeElement handleConditionFalseOneNull(Value value) {
+    /**
+     * Handles the false branch when the value is null.
+     *
+     * @param value The value to check for null.
+     * @return The updated lattice element after handling the false branch.
+     */
+    private LatticeElement handleFalseBranchWithNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         // send empty if contains null;
         if (this.State.get(value.toString()).contains("null")) {
@@ -268,49 +295,76 @@ public class PointerLatticeElement implements LatticeElement {
         return (LatticeElement) result;
     }
 
-    private LatticeElement handleReferenceType(boolean condition, Value t, Value left, Value right) {
-        if ((isEqCond(t) && condition == true) || (isNEqCond(t) && condition == false)) {
-            return handleConditionTrueNonNull(left, right);
+  
+    /**
+     * Handles the case when the type of a value is reference type, based on the given condition, operation, and value.
+     *
+     * @param condition The condition of the if statement
+     * @param operation The operation being performed
+     * @param left The left value in the operation
+     * @param right The right value in the operation
+     * @return The updated lattice element
+     */
+    private LatticeElement handleIfReferenceType(boolean condition, Value operation, Value left, Value right) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        if ((isEqCond(operation) && condition == true) || (isNEqCond(operation) && condition == false)) {
+            result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
+            result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
+            return (LatticeElement) result;
+        }
+        return result;
+    }
+
+    /**
+     * Handles the case when the type of a value is null, based on the given condition, operation, and value.
+     *
+     * @param condition The boolean condition to evaluate
+     * @param operation The operation being performed
+     * @param value The value to handle
+     * @return The lattice element representing the result of the operation
+     */
+    private LatticeElement handleIfNullType(boolean condition, Value operation, Value value) {
+        if (isEqCond(operation)) {
+            if (condition == true) {
+                return handleTrueBranchWithNull(value);
+            } else {
+                return handleFalseBranchWithNull(value);
+            }
+        } else if (isNEqCond(operation)) {
+            if (condition == true) {
+                return handleFalseBranchWithNull(value);
+            } else {
+                return handleTrueBranchWithNull(value);
+            }
         }
         return new PointerLatticeElement(this.State);
     }
 
-    private LatticeElement handleNullType(boolean condition, Value t, Value value) {
-        if (isEqCond(t)) {
-            if (condition == true) {
-                return handleConditionTrueOneNull(value);
-            } else {
-                return handleConditionFalseOneNull(value);
-            }
-        } else if (isNEqCond(t)) {
-            if (condition == true) {
-                return handleConditionFalseOneNull(value);
-            } else {
-                return handleConditionTrueOneNull(value);
-            }
-        }
-        return new PointerLatticeElement(this.State);
-    }
-
+    /**
+     * Handles the if condition statement and returns the corresponding lattice element based on the condition and types of the operands.
+     *
+     * @param condition The boolean condition of the if statement
+     * @param st The IfStmt object representing the if statement
+     * @return The lattice element representing the result of the if condition evaluation
+     */
     private LatticeElement handleIfCondition(boolean condition, IfStmt st) {
-        Value t = st.getCondition();
-        Value left = t.getUseBoxes().get(0).getValue();
-        Value right = t.getUseBoxes().get(1).getValue();
+        Value operation = st.getCondition();
+        Value left = operation.getUseBoxes().get(0).getValue();
+        Value right = operation.getUseBoxes().get(1).getValue();
 
         // Both right and left are Reference Type
         if (isReferenceType(right.getType()) && isReferenceType(left.getType())) {
-            return handleReferenceType(condition, t, left, right);
+            return handleIfReferenceType(condition, operation, left, right);
         }
         // Only Right is reference type
         else if (isNullType(right.getType()) && isReferenceType(left.getType())) {
 
-            return handleNullType(condition, t, left);
+            return handleIfNullType(condition, operation, left);
         }
         // Only left is reference Type
         else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
-            return handleNullType(condition, t, right);
+            return handleIfNullType(condition, operation, right);
         }
-       
 
         return new PointerLatticeElement(this.State);
     }
