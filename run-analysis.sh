@@ -10,4 +10,8 @@ set -e
 
 
 # XXX you can add / delete / comment / uncomment lines below
-./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "MyTest"
+./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "fun7_public"
+
+    javac   "AutoMatedTester.java"
+time \
+    java -Xms800m -Xmx3g "AutoMatedTester" "./target2-mine/Public_Test_fun4.txt" "./Result_fun4_public.txt"

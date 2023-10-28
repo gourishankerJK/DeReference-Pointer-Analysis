@@ -12,11 +12,12 @@ public class BasicTest {
     void MyTest() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        v2 = v1;
-        while(v1 == v2){
-            v1 = new BasicTest();
+        if(v1 == v2){
+            v1.f = v2;
         }
-        v2.f = v1;
+        else{
+            v1.f = v1;
+        }
        
        
 

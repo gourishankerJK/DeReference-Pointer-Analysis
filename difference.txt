@@ -1,0 +1,155 @@
+Difference found at line 15
+File 0: BasicTest.fun3: in08: new03.f: {new03, new01}
+File 1: BasicTest.fun3_public: in08: new03.f: {new01, new03}
+---=-------=------=--
+Difference found at line 19
+File 0: BasicTest.fun3: in10: $r1: {new03}
+File 1: BasicTest.fun3_public: in10: $r0: {new01}
+---=-------=------=--
+Difference found at line 20
+File 0: BasicTest.fun3: in10: $r0: {new01}
+File 1: BasicTest.fun3_public: in10: $r1: {new03}
+---=-------=------=--
+Difference found at line 21
+File 0: BasicTest.fun3: in10: new03.f: {new03, new01, null}
+File 1: BasicTest.fun3_public: in10: new03.f: {new01, new03, null}
+---=-------=------=--
+Completed File: 1
+XXXXXXXXXXXXXXXXX
+Completed File: 2
+XXXXXXXXXXXXXXXXX
+Difference found at line 72
+File 2: BasicTest.fun5: in18: r3: {new01, new03, null}
+File 3: BasicTest.fun5_public: in18: new01.f: {null}
+---=-------=------=--
+Difference found at line 73
+File 2: BasicTest.fun5: in18: new01.f: {null}
+File 3: BasicTest.fun5_public: in18: new03.f: {new05}
+---=-------=------=--
+Difference found at line 74
+File 2: BasicTest.fun5: in18: new03.f: {new05}
+File 3: BasicTest.fun5_public: in18: r3: {new01, new03, null}
+---=-------=------=--
+Completed File: 3
+XXXXXXXXXXXXXXXXX
+Difference found at line 32
+File 3: BasicTest.fun6: in19: $r2: {new17}
+File 4: BasicTest.fun6_public: in18: $r2: {new17}
+---=-------=------=--
+Difference found at line 33
+File 3: BasicTest.fun6: in20: $r0: {new13}
+File 4: BasicTest.fun6_public: in19: $r2: {new17}
+---=-------=------=--
+Difference found at line 34
+File 3: BasicTest.fun6: in20: $r2: {new17}
+File 4: BasicTest.fun6_public: in20: $r0: {new13}
+---=-------=------=--
+Difference found at line 35
+File 3: BasicTest.fun6: in20: $r4: {new04}
+File 4: BasicTest.fun6_public: in20: $r2: {new17}
+---=-------=------=--
+Difference found at line 36
+File 3: BasicTest.fun6: in20: new04.f: {new13}
+File 4: BasicTest.fun6_public: in20: $r4: {new04}
+---=-------=------=--
+Difference found at line 37
+File 3: BasicTest.fun6: in20: r3: {new04, null}
+File 4: BasicTest.fun6_public: in20: new04.f: {new13}
+---=-------=------=--
+Difference found at line 38
+File 3: BasicTest.fun6: in21: $r0: {new13}
+File 4: BasicTest.fun6_public: in20: r3: {new04, null}
+---=-------=------=--
+Difference found at line 39
+File 3: BasicTest.fun6: in21: $r2: {new17}
+File 4: BasicTest.fun6_public: in21: $r0: {new13}
+---=-------=------=--
+Difference found at line 40
+File 3: BasicTest.fun6: in21: $r4: {new04}
+File 4: BasicTest.fun6_public: in21: $r2: {new17}
+---=-------=------=--
+Difference found at line 41
+File 3: BasicTest.fun6: in21: new04.f: {new13}
+File 4: BasicTest.fun6_public: in21: $r4: {new04}
+---=-------=------=--
+Difference found at line 42
+File 3: BasicTest.fun6: in21: r3: {new04, null}
+File 4: BasicTest.fun6_public: in21: new04.f: {new13}
+---=-------=------=--
+Difference found at line 43
+File 3: BasicTest.fun6: in22: $r0: {new13}
+File 4: BasicTest.fun6_public: in21: r3: {new04, null}
+---=-------=------=--
+Difference found at line 44
+File 3: BasicTest.fun6: in22: $r1: {new21}
+File 4: BasicTest.fun6_public: in22: $r0: {new13}
+---=-------=------=--
+Difference found at line 45
+File 3: BasicTest.fun6: in22: $r2: {new17}
+File 4: BasicTest.fun6_public: in22: $r1: {new21}
+---=-------=------=--
+Difference found at line 46
+File 3: BasicTest.fun6: in22: $r4: {new04}
+File 4: BasicTest.fun6_public: in22: $r2: {new17}
+---=-------=------=--
+Difference found at line 47
+File 3: BasicTest.fun6: in22: new04.f: {new13}
+File 4: BasicTest.fun6_public: in22: $r4: {new04}
+---=-------=------=--
+Difference found at line 48
+File 3: BasicTest.fun6: in22: r3: {new04, null}
+File 4: BasicTest.fun6_public: in22: new04.f: {new13}
+---=-------=------=--
+Difference found at line 49
+File 3: BasicTest.fun6: in23: $r0: {new13}
+File 4: BasicTest.fun6_public: in22: r3: {new04, null}
+---=-------=------=--
+Difference found at line 50
+File 3: BasicTest.fun6: in23: $r1: {new21}
+File 4: BasicTest.fun6_public: in23: $r0: {new13}
+---=-------=------=--
+Difference found at line 51
+File 3: BasicTest.fun6: in23: $r2: {new17}
+File 4: BasicTest.fun6_public: in23: $r1: {new21}
+---=-------=------=--
+Difference found at line 52
+File 3: BasicTest.fun6: in23: $r4: {new04}
+File 4: BasicTest.fun6_public: in23: $r2: {new17}
+---=-------=------=--
+Difference found at line 53
+File 3: BasicTest.fun6: in23: new04.f: {new13}
+File 4: BasicTest.fun6_public: in23: $r4: {new04}
+---=-------=------=--
+Difference found at line 54
+File 3: BasicTest.fun6: in23: r3: {new04, null}
+File 4: BasicTest.fun6_public: in23: new04.f: {new13}
+---=-------=------=--
+Difference found at line 55
+File 3: BasicTest.fun6: in24: $r0: {new13}
+File 4: BasicTest.fun6_public: in23: r3: {new04, null}
+---=-------=------=--
+Difference found at line 56
+File 3: BasicTest.fun6: in24: $r1: {new21}
+File 4: BasicTest.fun6_public: in24: $r0: {new13}
+---=-------=------=--
+Difference found at line 57
+File 3: BasicTest.fun6: in24: $r2: {new17}
+File 4: BasicTest.fun6_public: in24: $r1: {new21}
+---=-------=------=--
+Difference found at line 58
+File 3: BasicTest.fun6: in24: $r4: {new04}
+File 4: BasicTest.fun6_public: in24: $r2: {new17}
+---=-------=------=--
+Difference found at line 59
+File 3: BasicTest.fun6: in24: new04.f: {new13, new21}
+File 4: BasicTest.fun6_public: in24: $r4: {new04}
+---=-------=------=--
+Difference found at line 60
+File 3: BasicTest.fun6: in24: r3: {new04, null}
+File 4: BasicTest.fun6_public: in24: new04.f: {new13, new21}
+---=-------=------=--
+Difference found at line 61
+File 4: BasicTest.fun6_public: in24: r3: {new04, null}
+---=-------=------=--
+Completed File: 4
+XXXXXXXXXXXXXXXXX
