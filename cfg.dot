@@ -1,8 +1,8 @@
 digraph "void fun7_public(int,int)" {
     label="void fun7_public(int,int)";
     node [shape=box];
-    "0" [style=filled,fillcolor=gray,label="i3 := @parameter0",];
-    "1" [label="i2 := @parameter1",];
+    "0" [style=filled,fillcolor=gray,label="r3 := @this",];
+    "1" [label="$r0 = new BasicTest",];
     "0"->"1" [color=black,];
     "28" [style=invis,label="Esc",];
     "0"->"28" [color=lightgray,label="\l+vmErrors",];
