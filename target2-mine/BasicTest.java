@@ -13,9 +13,13 @@ public class BasicTest {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2 = v1;
+        while(v1 == v2){
+            v1 = new BasicTest();
+        }
+        v2.f = v1;
+       
+       
 
-        BasicTest v3 = f();
-        v3.f = v1.f = v2.f = g();
     }
 
     static void fun1() {
