@@ -69,9 +69,9 @@ BasicTest.fun5: in18: $r1: {new03}
 BasicTest.fun5: in18: $r2: {new05}
 BasicTest.fun5: in18: $r4: {new05, null}
 BasicTest.fun5: in18: $r5: {new17}
-BasicTest.fun5: in18: r3: {new01, new03, null}
 BasicTest.fun5: in18: new01.f: {null}
 BasicTest.fun5: in18: new03.f: {new05}
+BasicTest.fun5: in18: r3: {new01, new03, null}
 BasicTest.fun5: in19: $r0: {new01}
 BasicTest.fun5: in19: $r1: {new03}
 BasicTest.fun5: in19: $r2: {new05}
