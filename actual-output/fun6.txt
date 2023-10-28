@@ -29,6 +29,7 @@ BasicTest.fun6: in16: $r0: {new13}
 BasicTest.fun6: in16: $r4: {new04}
 BasicTest.fun6: in16: new04.f: {new13}
 BasicTest.fun6: in16: r3: {new04, null}
+BasicTest.fun6: in18: $r2: {new17}
 BasicTest.fun6: in19: $r2: {new17}
 BasicTest.fun6: in20: $r0: {new13}
 BasicTest.fun6: in20: $r2: {new17}

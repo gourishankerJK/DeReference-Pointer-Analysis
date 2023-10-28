@@ -42,6 +42,12 @@ public class Analysis extends PAVBase {
         String mClass = args[1];
         String tClass = args[2];
         String tMethod = args[3];
+        String mode = "";
+        try {
+            mode = args[4];
+        } catch (Exception e) {
+            System.out.println("Mode not given, output file will be generated in same directory");
+        }
         boolean methodFound = false;
 
         List<String> procDir = new ArrayList<String>();
@@ -103,12 +109,16 @@ public class Analysis extends PAVBase {
             }
 
             // Write the same thing to the file
-            FileWriter fileWriter = new FileWriter("Result_" + tMethod + ".txt");
+            FileWriter fileWriter;
+            if (mode.equals("test")) {
+                fileWriter = new FileWriter("./actual-output/" + tMethod + ".txt");
+            } else {
+                fileWriter = new FileWriter(tMethod + ".txt");
+            }
             for (String str : output) {
                 fileWriter.write(str + System.lineSeparator());
             }
             fileWriter.close();
-
 
             drawMethodDependenceGraph(targetMethod);
         } else {
@@ -121,8 +131,9 @@ public class Analysis extends PAVBase {
         int lineNumber = 0;
         for (ProgramPoint programPoint : result) {
             Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.latticeElement).getState();
-            for (String key: state.keySet()) {
-                if (state.get(key).size() == 0) continue;
+            for (String key : state.keySet()) {
+                if (state.get(key).size() == 0)
+                    continue;
 
                 List<String> varList = new ArrayList<String>(state.get(key));
                 Collections.sort(varList);
