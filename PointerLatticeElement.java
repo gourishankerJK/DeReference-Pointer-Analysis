@@ -108,7 +108,6 @@ public class PointerLatticeElement implements LatticeElement {
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
-        System.out.println("Operands " + lhs + " " + rhs.getClass());
 
         if (!(lhs.getType() instanceof soot.RefType)) {
             return result;
