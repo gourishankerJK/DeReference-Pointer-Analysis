@@ -108,7 +108,6 @@ public class PointerLatticeElement implements LatticeElement {
         PointerLatticeElement result = new PointerLatticeElement(State);
         Value lhs = st.getLeftOp();
         Value rhs = st.getRightOp();
-        System.out.println("Operands " + lhs + " " + rhs.getClass());
 
         if (!(lhs.getType() instanceof soot.RefType)) {
             return result;
@@ -211,6 +210,13 @@ public class PointerLatticeElement implements LatticeElement {
         return new PointerLatticeElement(this.State);
     }
 
+    private PointerLatticeElement clearState(PointerLatticeElement result) {
+        for (String key : this.State.keySet()) {
+            result.State.get(key).clear();
+        }
+        return result;
+    }
+
     /**
      * Checks if the given type is a reference type.
      *
@@ -284,9 +290,7 @@ public class PointerLatticeElement implements LatticeElement {
         if (this.State.get(value.toString()).contains("null")) {
             // if it contains only NUll , send \bot
             if (this.State.get(value.toString()).size() == 1) {
-                for (String key : this.State.keySet()) {
-                    result.State.get(key).clear();
-                }
+                result = clearState(result);
                 // else filter out null
             } else {
                 result.State.get(value.toString()).removeAll(Collections.singleton("null"));
@@ -295,14 +299,14 @@ public class PointerLatticeElement implements LatticeElement {
         return (LatticeElement) result;
     }
 
-  
     /**
-     * Handles the case when the type of a value is reference type, based on the given condition, operation, and value.
+     * Handles the case when the type of a value is reference type, based on the
+     * given condition, operation, and value.
      *
      * @param condition The condition of the if statement
      * @param operation The operation being performed
-     * @param left The left value in the operation
-     * @param right The right value in the operation
+     * @param left      The left value in the operation
+     * @param right     The right value in the operation
      * @return The updated lattice element
      */
     private LatticeElement handleIfReferenceType(boolean condition, Value operation, Value left, Value right) {
@@ -310,17 +314,21 @@ public class PointerLatticeElement implements LatticeElement {
         if ((isEqCond(operation) && condition == true) || (isNEqCond(operation) && condition == false)) {
             result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
             result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
+            if (result.State.get(right.toString()).size() == 0) {
+                result = clearState(result);
+            }
             return (LatticeElement) result;
         }
         return result;
     }
 
     /**
-     * Handles the case when the type of a value is null, based on the given condition, operation, and value.
+     * Handles the case when the type of a value is null, based on the given
+     * condition, operation, and value.
      *
      * @param condition The boolean condition to evaluate
      * @param operation The operation being performed
-     * @param value The value to handle
+     * @param value     The value to handle
      * @return The lattice element representing the result of the operation
      */
     private LatticeElement handleIfNullType(boolean condition, Value operation, Value value) {
@@ -341,11 +349,13 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     /**
-     * Handles the if condition statement and returns the corresponding lattice element based on the condition and types of the operands.
+     * Handles the if condition statement and returns the corresponding lattice
+     * element based on the condition and types of the operands.
      *
      * @param condition The boolean condition of the if statement
-     * @param st The IfStmt object representing the if statement
-     * @return The lattice element representing the result of the if condition evaluation
+     * @param st        The IfStmt object representing the if statement
+     * @return The lattice element representing the result of the if condition
+     *         evaluation
      */
     private LatticeElement handleIfCondition(boolean condition, IfStmt st) {
         Value operation = st.getCondition();
