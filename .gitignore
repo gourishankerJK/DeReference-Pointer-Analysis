@@ -26,3 +26,4 @@ replay_pid*
 *.png
 
 TestLattice.java
+*.dot
