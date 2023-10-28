@@ -16,6 +16,8 @@ import soot.jimple.internal.JStaticInvokeExpr;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,7 @@ public class PointerLatticeElement implements LatticeElement {
 
     public static String getLineNumber(Stmt st) {
         List<Tag> tags = st.getTags();
-        return String.format("%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
+        return String.format("new%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
     }
 
     @Override
@@ -104,96 +106,6 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
-    private LatticeElement tfAssignmentStmt(AssignStmt st) {
-        PointerLatticeElement result = new PointerLatticeElement(State);
-        Value lhs = st.getLeftOp();
-        Value rhs = st.getRightOp();
-
-        if (!(lhs.getType() instanceof soot.RefType)) {
-            return result;
-        }
-
-        // x = new ()
-        if (lhs instanceof JimpleLocal && (rhs instanceof JNewExpr || (rhs instanceof JStaticInvokeExpr)
-                || (rhs instanceof JVirtualInvokeExpr))) {
-            result.State.get(lhs.toString()).add("new" + (getLineNumber(st)));
-        }
-        // x = y
-        if (lhs instanceof JimpleLocal && rhs instanceof JimpleLocal) {
-            result.State.put(lhs.toString(), new HashSet<>(result.State.get(rhs.toString())));
-        }
-
-        // x = null
-        if (lhs instanceof JimpleLocal && rhs instanceof NullConstant) {
-            result.State.get(lhs.toString()).add("null");
-        }
-
-        // x.f = null
-        if (lhs instanceof JInstanceFieldRef && rhs instanceof NullConstant) {
-            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
-            for (String pseudoVar : result.State.get(l.getBase().toString())) {
-                String key = pseudoVar + "." + l.getField().getName();
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, new HashSet<>());
-                }
-                result.State.get(key).add("null");
-            }
-        }
-
-        // x = y.f
-        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
-            HashSet<String> res = new HashSet<>();
-            JInstanceFieldRef r = (JInstanceFieldRef) rhs;
-            for (String pseudoVar : result.State.get(r.getBase().toString())) {
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                String key = pseudoVar + "." + r.getField().getName();
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, new HashSet<>());
-                }
-                res.addAll(result.State.get(key));
-            }
-            result.State.put(lhs.toString(), res);
-        }
-
-        // x.f = new
-        if (lhs instanceof JInstanceFieldRef && rhs instanceof JNewExpr) {
-            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
-            for (String pseudoVar : result.State.get(l.getBase().toString())) {
-                String key = pseudoVar + "." + l.getField().getName();
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, new HashSet<>());
-                }
-                result.State.get(key).add("new" + getLineNumber(st));
-            }
-        }
-
-        // x.f = y
-        if (lhs instanceof JInstanceFieldRef && rhs instanceof JimpleLocal) {
-            JInstanceFieldRef l = (JInstanceFieldRef) lhs;
-            for (String pseudoVar : result.State.get(l.getBase().toString())) {
-                if (pseudoVar == "null") {
-                    continue;
-                }
-                String key = pseudoVar + "." + l.getField().getName();
-                HashSet<String> updatedMap = new HashSet<>(result.State.get(rhs.toString()));
-                if (!result.State.containsKey(key)) {
-                    result.State.put(key, updatedMap);
-                }
-                result.State.get(key).addAll(updatedMap);
-            }
-        }
-
-        return result;
-    }
-
     /**
      * Evaluates a conditional statement in the program.
      *
@@ -210,11 +122,129 @@ public class PointerLatticeElement implements LatticeElement {
         return new PointerLatticeElement(this.State);
     }
 
+    private LatticeElement tfAssignmentStmt(AssignStmt st) {
+        PointerLatticeElement result = new PointerLatticeElement(State);
+        Value lhs = st.getLeftOp();
+        Value rhs = st.getRightOp();
+
+        if (!(lhs.getType() instanceof soot.RefType)) {
+            return result;
+        }
+
+        Class<?>[] nonFieldClasses = { JNewExpr.class, JStaticInvokeExpr.class, JVirtualInvokeExpr.class,
+                NullConstant.class, JimpleLocal.class };
+
+        // x = new (), x = something(), x = null, x = y
+        if (lhs instanceof JimpleLocal && isInstanceOfMultiple(rhs, nonFieldClasses)) {
+            return handleNonFieldAssignmentForLocal(st, result, lhs, rhs);
+        }
+
+        // x.f = null, x.f = new, x.f = something(), x.f = y
+        if (lhs instanceof JInstanceFieldRef && isInstanceOfMultiple(rhs, nonFieldClasses)) {
+            return handleNonFieldAssignmentForField(st, result, lhs, rhs);
+        }
+
+        // x = y.f
+        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
+            return handleFieldAssignment(result, lhs, rhs);
+        }
+
+        return result;
+    }
+
+    private LatticeElement handleFieldAssignment(PointerLatticeElement result, Value lhs, Value rhs) {
+        HashSet<String> res = new HashSet<>();
+        JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+        for (String pseudoVar : result.State.get(r.getBase().toString())) {
+            String key = getSymbolicFieldKey(pseudoVar, r);
+            if (pseudoVar == "null" || !result.State.containsKey(key)) {
+                continue;
+            }
+            res.addAll(result.State.get(key));
+        }
+        // strong update for x = y.f
+        result.State.put(lhs.toString(), res);
+        return result;
+    }
+
+    private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
+            Value rhs) {
+        JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+        for (String pseudoVar : result.State.get(l.getBase().toString())) {
+            if (pseudoVar == "null") {
+                continue;
+            }
+            String key = getSymbolicFieldKey(pseudoVar, l);
+            String symbolicConstant = rhs instanceof NullConstant ? "null" : getLineNumber(st);
+            HashSet<String> updatedMap = rhs instanceof JimpleLocal
+                    ? new HashSet<>(result.State.get(rhs.toString()))
+                    : new HashSet<>(Arrays.asList(symbolicConstant));
+            if (!result.State.containsKey(key)) {
+                result.State.put(key, new HashSet<>());
+            }
+            // weak update for all x.f assignments
+            result.State.get(key).addAll(updatedMap);
+        }
+        return result;
+    }
+
+    private LatticeElement handleNonFieldAssignmentForLocal(AssignStmt st, PointerLatticeElement result, Value lhs,
+            Value rhs) {
+        String symbolicConstant = rhs instanceof NullConstant ? "null" : getLineNumber(st);
+        HashSet<String> updatedMap = rhs instanceof JimpleLocal ? new HashSet<>(result.State.get(rhs.toString()))
+                : new HashSet<>(Arrays.asList(symbolicConstant));
+        // strong update for x = null, x = y
+        if (rhs instanceof NullConstant || rhs instanceof JimpleLocal) {
+            result.State.put(lhs.toString(), updatedMap);
+
+        } else {
+            result.State.get(lhs.toString()).addAll(updatedMap);
+        }
+        return result;
+    }
+
+    /**
+     * Utility to get the key for a symbolic field for example "new01.f"
+     * 
+     * @param pseudoVar The pseudoVariable for example "new01", this is an element
+     *                  in range of LatticeElement function (Var U (pseudoVar X
+     *                  fields) -> pseudoVar)
+     * @param operand   Field of the class that is being accessed, example in
+     *                  new01.f, "f".
+     * @return concatenated string in (pseudoVar X fields)
+     */
+    private String getSymbolicFieldKey(String pseudoVar, JInstanceFieldRef operand) {
+        return pseudoVar + "." + operand.getField().getName();
+    }
+
+    /**
+     * Utility to clear the state (Used in making the state to bot)
+     * 
+     * @param result PointerLatticeElement whose state needs to be cleared
+     * @return Cleared PointerLatticeElement
+     */
     private PointerLatticeElement clearState(PointerLatticeElement result) {
         for (String key : this.State.keySet()) {
             result.State.get(key).clear();
         }
         return result;
+    }
+
+    /**
+     * Checks if given object is of any of the class mentioned in classes at runtime
+     * 
+     * @param obj     The object to be checked
+     * @param classes The classes to be checked against
+     * @return If obj is of any of the type mentioned in classes, return true else
+     *         return false
+     */
+    private static boolean isInstanceOfMultiple(Object obj, Class<?>... classes) {
+        for (Class<?> clas : classes) {
+            if (clas.isInstance(obj)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
