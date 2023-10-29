@@ -59,7 +59,7 @@ public class PointerLatticeElement implements LatticeElement {
         System.out.println();
     }
 
-    public static String getLineNumber(Stmt st) {
+    public static String getAllocationSiteSymbol(Stmt st) {
         List<Tag> tags = st.getTags();
         return String.format("new%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
     }
@@ -95,8 +95,6 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        // no actual assignments happening example virtual invoke
-
         LatticeElement result = new PointerLatticeElement(State);
 
         if (st instanceof JAssignStmt) {
@@ -139,20 +137,29 @@ public class PointerLatticeElement implements LatticeElement {
             return handleNonFieldAssignmentForLocal(st, result, lhs, rhs);
         }
 
+        // x = y.f
+        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
+            return handleFieldAssignmentForLocal(result, lhs, rhs);
+        }
+
         // x.f = null, x.f = new, x.f = something(), x.f = y
         if (lhs instanceof JInstanceFieldRef && isInstanceOfMultiple(rhs, nonFieldClasses)) {
             return handleNonFieldAssignmentForField(st, result, lhs, rhs);
         }
 
-        // x = y.f
-        if (lhs instanceof JimpleLocal && rhs instanceof JInstanceFieldRef) {
-            return handleFieldAssignment(result, lhs, rhs);
-        }
-
         return result;
     }
 
-    private LatticeElement handleFieldAssignment(PointerLatticeElement result, Value lhs, Value rhs) {
+    /**
+     * Handles the transfer function assignment statements of the form x = y, x =
+     * null, x = new(), x = something()
+     * 
+     * @param result LatticeElement on which the transfer function is to be applied
+     * @param lhs    Left hand side of the assignment
+     * @param rhs    Right hand side of the assignment
+     * @return The modified result object after applying transfer function
+     */
+    private LatticeElement handleFieldAssignmentForLocal(PointerLatticeElement result, Value lhs, Value rhs) {
         HashSet<String> res = new HashSet<>();
         JInstanceFieldRef r = (JInstanceFieldRef) rhs;
         for (String pseudoVar : result.State.get(r.getBase().toString())) {
@@ -167,6 +174,16 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
+    /**
+     * Handles the transfer function assignment statements of the form x.f = y, x.f
+     * = null, x.f = new(), x.f = something()
+     * 
+     * @param st     Jimple assignment statement
+     * @param result LatticeElement on which the transfer function is to be applied
+     * @param lhs    Left hand side of the assignment
+     * @param rhs    Right hand side of the assignment
+     * @return The modified result object after applying transfer function
+     */
     private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
@@ -175,7 +192,7 @@ public class PointerLatticeElement implements LatticeElement {
                 continue;
             }
             String key = getSymbolicFieldKey(pseudoVar, l);
-            String symbolicConstant = rhs instanceof NullConstant ? "null" : getLineNumber(st);
+            String symbolicConstant = rhs instanceof NullConstant ? "null" : getAllocationSiteSymbol(st);
             HashSet<String> updatedMap = rhs instanceof JimpleLocal
                     ? new HashSet<>(result.State.get(rhs.toString()))
                     : new HashSet<>(Arrays.asList(symbolicConstant));
@@ -188,18 +205,23 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
+    /**
+     * Handles the transfer function assignment statements of the form x = y.f
+     * 
+     * @param st     Jimple assignment statement
+     * @param result LatticeElement on which the transfer function is to be applied
+     * @param lhs    Left hand side of the assignment
+     * @param rhs    Right hand side of the assignment
+     * @return The modified result object after applying transfer function
+     */
     private LatticeElement handleNonFieldAssignmentForLocal(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
-        String symbolicConstant = rhs instanceof NullConstant ? "null" : getLineNumber(st);
+        String symbolicConstant = rhs instanceof NullConstant ? "null" : getAllocationSiteSymbol(st);
         HashSet<String> updatedMap = rhs instanceof JimpleLocal ? new HashSet<>(result.State.get(rhs.toString()))
                 : new HashSet<>(Arrays.asList(symbolicConstant));
-        // strong update for x = null, x = y
-        if (rhs instanceof NullConstant || rhs instanceof JimpleLocal) {
-            result.State.put(lhs.toString(), updatedMap);
+        // strong update for x = null, x = y, x = new(), x = something()
+        result.State.put(lhs.toString(), updatedMap);
 
-        } else {
-            result.State.get(lhs.toString()).addAll(updatedMap);
-        }
         return result;
     }
 
