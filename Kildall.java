@@ -1,13 +1,17 @@
+import java.util.ArrayList;
 import java.util.List;
 
-public class Kildall {
 
-    public static List<ProgramPoint> ComputeLFP(List<ProgramPoint> programPoints) {
+public class Kildall {
+    static List<List<ProgramPoint>> logFactLists = new ArrayList<>();
+
+    public static List<List<ProgramPoint>> ComputeLFP(List<ProgramPoint> programPoints) {
         ProgramPoint analysisPoint;
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
             Propagate(analysisPoint);
         }
-        return programPoints;
+        logFactLists.add(0 , programPoints);
+        return logFactLists;
     }
 
     private static void Propagate(ProgramPoint analysisPoint) {
@@ -16,6 +20,7 @@ public class Kildall {
             return;
         // Unmark and propagate to the successors
         analysisPoint.markedForPropagation = false;
+        List<ProgramPoint> logFact = new ArrayList<>();
         for (ProgramPoint successor : analysisPoint.successors) {
             LatticeElement joinElement;
 
@@ -32,9 +37,11 @@ public class Kildall {
             } else {
                 successor.markedForPropagation = true;
                 successor.latticeElement = joinElement;
+                logFact.add(successor);
             }
             i++;
         }
+        logFactLists.add(logFact);
     }
 
     private static ProgramPoint GetMarkedProgramPoint(List<ProgramPoint> programPoints) {
