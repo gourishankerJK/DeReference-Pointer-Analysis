@@ -48,7 +48,8 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     public Map<String, HashSet<String>> getState() {
-        return this.State;
+
+        return new PointerLatticeElement(this.State).State;
     }
 
     public void printState() {
@@ -167,6 +168,15 @@ public class PointerLatticeElement implements LatticeElement {
         return result;
     }
 
+    /**
+     * Handles the assignment of a non-field value to a field.
+     *
+     * @param st The assignment statement
+     * @param result The current lattice element
+     * @param lhs The left-hand side of the assignment
+     * @param rhs The right-hand side of the assignment
+     * @return The updated lattice element after the assignment
+     */
     private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
