@@ -14,6 +14,7 @@ import java.util.*;
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
+import soot.tagkit.Tag;
 import soot.Unit;
 import soot.Scene;
 import soot.Body;
@@ -46,7 +47,7 @@ public class Analysis extends PAVBase {
         try {
             mode = args[4];
         } catch (Exception e) {
-            System.out.println("Mode not given, output file will be generated in same directory");
+            
         }
         boolean methodFound = false;
 
@@ -99,26 +100,13 @@ public class Analysis extends PAVBase {
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
 
             // Compute Least fix point using Kildall's algorithms
-            List<ProgramPoint> result = Kildall.ComputeLFP(preProcessedBody);
-
+            List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
-            Set<ResultTuple> resultFormatted = getFormattedResult(result, tMethod);
-            String[] output = fmtOutputData(resultFormatted, tClass + ".");
-            for (String line : output) {
-                System.out.println(line);
-            }
+            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
 
-            // Write the same thing to the file
-            FileWriter fileWriter;
-            if (mode.equals("test")) {
-                fileWriter = new FileWriter("./actual-output/" + tMethod + ".txt");
-            } else {
-                fileWriter = new FileWriter(tMethod + ".txt");
+            for (int i = 1; i < result.size(); i++) {
+                writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
             }
-            for (String str : output) {
-                fileWriter.write(str + System.lineSeparator());
-            }
-            fileWriter.close();
 
             drawMethodDependenceGraph(targetMethod);
         } else {
@@ -126,9 +114,35 @@ public class Analysis extends PAVBase {
         }
     }
 
+    private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,
+            List<ProgramPoint> result)
+            throws IOException {
+        Set<ResultTuple> resultFormatted = getFormattedResult(result, tMethod);
+        String[] output = fmtOutputData(resultFormatted, tClass + ".");
+        FileWriter fileWriter;
+        String type = logIndex != 0 ? "fulloutput" : "output";
+        try {
+
+            if (mode.equals("test")) {
+                fileWriter = new FileWriter(String.format("./actual-output/%s.%s.%s.txt", tClass, tMethod, type),
+                        logIndex > 1);
+            } else {
+                fileWriter = new FileWriter(String.format("%s/%s.%s.%s.txt", directory, tClass, tMethod, type),
+                        logIndex > 1);
+            }
+            for (String str : output) {
+                fileWriter.write(str + System.lineSeparator());
+            }
+            if (logIndex >= 1)
+                fileWriter.write("\n");
+            fileWriter.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
         Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
-        int lineNumber = 0;
         for (ProgramPoint programPoint : result) {
             Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.latticeElement).getState();
             for (String key : state.keySet()) {
@@ -137,11 +151,11 @@ public class Analysis extends PAVBase {
 
                 List<String> varList = new ArrayList<String>(state.get(key));
                 Collections.sort(varList);
-
-                ResultTuple tuple = new ResultTuple(method, String.format("in%02d", lineNumber), key, varList);
+                List<Tag> tags = programPoint.statement.getTags();
+                ResultTuple tuple = new ResultTuple(method,
+                        String.format("in%02d", Integer.parseInt(tags.get(tags.size() - 1).toString())), key, varList);
                 resultFormatted.add(tuple);
             }
-            lineNumber++;
         }
 
         return resultFormatted;

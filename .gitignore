@@ -27,3 +27,4 @@ replay_pid*
 
 TestLattice.java
 *.dot
+*.txt

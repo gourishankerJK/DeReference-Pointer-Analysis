@@ -1,0 +1,7 @@
+BasicTest.MyTest1: in03: $r2: {new02}
+BasicTest.MyTest1: in04: $r2: {new02}
+BasicTest.MyTest1: in05: $r2: {new02}
+BasicTest.MyTest1: in06: $r2: {new02}
+BasicTest.MyTest1: in09: $r2: {new02}
+BasicTest.MyTest1: in10: $r2: {new02}
+BasicTest.MyTest1: in11: $r2: {new02}

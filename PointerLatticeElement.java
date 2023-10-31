@@ -48,7 +48,8 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     public Map<String, HashSet<String>> getState() {
-        return this.State;
+
+        return new PointerLatticeElement(this.State).State;
     }
 
     public void printState() {
