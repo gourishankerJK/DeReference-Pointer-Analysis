@@ -15,7 +15,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 RESET='\033[0m'
 
-file_name="$TARGETMETHOD.txt"
+file_name="BasicTest.$TARGETMETHOD.output.txt"
 # echo "comparing actual-output/$file_name with expected-output/$file_name"
 if [ -e "$source_folder2/$file_name" ]; then
     difference=$(diff "$source_folder1/$file_name" "$source_folder2/$file_name")
