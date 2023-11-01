@@ -9,15 +9,38 @@ public class BasicTest {
         return new BasicTest();
     }
 
-    void MyTest() {
+    static BasicTest SizeOneNULLTest() {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        BasicTest v3 = new BasicTest();
+        v1.f = v2;
+        v2.f = v3;
+        v1.f = v2.f;
+        v1 = v3.f;
+        return v1;
+    }
+
+    static void BothNUll() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         if (v1 == v2) {
-            v1.f = v2;
+            v1 = null;
+        } else
+            v2 = null;
+
+        v1 = null;
+        if (v1 == v2) {
+            v2 = new BasicTest();
         } else {
-            v1.f = v1;
+            v1 = new BasicTest();
         }
 
+    }
+
+    static void fun1() {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        v2.f = v1;
     }
 
     public static void conditional_check() {
