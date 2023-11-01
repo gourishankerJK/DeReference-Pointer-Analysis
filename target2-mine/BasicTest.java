@@ -43,6 +43,46 @@ public class BasicTest {
         v2.f = v1;
     }
 
+    public static void conditional_check() {
+        int i = 0;
+        BasicTest v1 = new BasicTest();
+        v1.f = null;
+        Object t1 = null;
+        Object t3 = null;
+        if (v1.f == t1) {
+            v1.f = null;
+        }
+    }
+
+    public static void assign_check(BasicTest t) {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        BasicTest v3 = new BasicTest();
+        v1.f = v3;
+        v1.f = v2;
+        v2.f = t;
+        v2.f = v1.f;
+    }
+
+    BasicTest xAssignWeakNew() {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        BasicTest v3 = this;
+        if (v1 == v2) {
+            System.out.println(v1);
+        }
+        v1 = new BasicTest();
+        v1 = v3;
+        return v1;
+
+    }
+
+    static void fun1() {
+        BasicTest v1 = new BasicTest();
+        BasicTest v2 = new BasicTest();
+        v2.f = v1;
+    }
+
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
