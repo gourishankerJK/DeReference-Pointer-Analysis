@@ -9,48 +9,31 @@ public class BasicTest {
         return new BasicTest();
     }
 
-    void MyTest() {
-        BasicTest v1 = new BasicTest();
-        BasicTest v2 = new BasicTest();
-        if (v1 == v2) {
-            v1.f = v2;
-        } else {
-            v1.f = v1;
-        }
-
-    }
-
-    public static void conditional_check() {
-        int i = 0;
-        BasicTest v1 = new BasicTest();
-        v1.f = null;
-        Object t1 = null;
-        Object t3 = null;
-        if (v1.f == t1) {
-            v1.f = null;
-        }
-    }
-
-    public static void assign_check(BasicTest t) {
+    static BasicTest SizeOneNULLTest() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         BasicTest v3 = new BasicTest();
-        v1.f = v3;
         v1.f = v2;
-        v2.f = t;
-        v2.f = v1.f;
+        v2.f = v3;
+        v1.f = v2.f;
+        v1 = v3.f;
+        return v1;
     }
 
-    BasicTest xAssignWeakNew() {
+    static void BothNUll() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        BasicTest v3 = this;
         if (v1 == v2) {
-            System.out.println(v1);
+            v1 = null;
+        } else
+            v2 = null;
+
+        v1 = null;
+        if (v1 == v2) {
+            v2 = new BasicTest();
+        } else {
+            v1 = new BasicTest();
         }
-        v1 = new BasicTest();
-        v1 = v3;
-        return v1;
 
     }
 

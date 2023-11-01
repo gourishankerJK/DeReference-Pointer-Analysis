@@ -207,7 +207,8 @@ public class PointerLatticeElement implements LatticeElement {
     }
 
     /**
-     * Handles the transfer function assignment statements of the form x = y.f
+     * Handles the transfer function assignment statements of the form x = y = null,
+     * x=y, x=new(), x=something
      * 
      * @param st     Jimple assignment statement
      * @param result LatticeElement on which the transfer function is to be applied
@@ -365,14 +366,19 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleIfReferenceType(boolean condition, Value operation, Value left, Value right) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         if ((isEqCond(operation) && condition == true) || (isNEqCond(operation) && condition == false)) {
+
             result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
             result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
             if (result.State.get(right.toString()).size() == 0) {
                 result = clearState(result);
             }
-            return (LatticeElement) result;
+        } else if (result.State.get(right.toString()).size() == 1 && result.State.get(left.toString()).size() == 1) {
+            if (result.State.get(right.toString()).contains("null")
+                    && result.State.get(left.toString()).contains("null")) {
+                result = clearState(result);
+            }
         }
-        return result;
+        return (LatticeElement) result;
     }
 
     /**
@@ -427,9 +433,19 @@ public class PointerLatticeElement implements LatticeElement {
         // Only left is reference Type
         else if (isNullType(left.getType()) && isReferenceType(right.getType())) {
             return handleIfNullType(condition, operation, right);
+        } else if (isNullType(left.getType()) && isNullType(right.getType())) {
+            return handleBothNUll(condition, operation);
         }
 
         return new PointerLatticeElement(this.State);
+    }
+
+    private LatticeElement handleBothNUll(boolean condition, Value operation) {
+        PointerLatticeElement result = new PointerLatticeElement(this.State);
+        if ((condition == true && isNEqCond(operation)) || (condition == false && isEqCond(operation))) {
+            result = clearState(result);
+        }
+        return result;
     }
 
 }
