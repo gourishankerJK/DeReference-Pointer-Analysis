@@ -77,12 +77,6 @@ public class BasicTest {
 
     }
 
-    static void fun1() {
-        BasicTest v1 = new BasicTest();
-        BasicTest v2 = new BasicTest();
-        v2.f = v1;
-    }
-
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
