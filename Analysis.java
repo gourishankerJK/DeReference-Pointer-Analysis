@@ -39,6 +39,10 @@ public class Analysis extends PAVBase {
     }
 
     public static void main(String[] args) throws IOException {
+        if (args.length < 4) {
+            System.out.println(
+                    "Incorrect usage, usage format: java Analysis <targetDirectory> <mainClass> <targetClass> <targetMethod>");
+        }
         String targetDirectory = args[0];
         String mClass = args[1];
         String tClass = args[2];
@@ -47,7 +51,7 @@ public class Analysis extends PAVBase {
         try {
             mode = args[4];
         } catch (Exception e) {
-            
+
         }
         boolean methodFound = false;
 
@@ -103,10 +107,13 @@ public class Analysis extends PAVBase {
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
             writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
-
+            System.out.println("Final output written in "
+                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
             for (int i = 1; i < result.size(); i++) {
                 writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
             }
+            System.out.println("Logs of kildall written in "
+                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
 
             drawMethodDependenceGraph(targetMethod);
         } else {
