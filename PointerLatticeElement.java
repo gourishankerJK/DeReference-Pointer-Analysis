@@ -94,18 +94,17 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public boolean equals(LatticeElement r) {
 
-        return ((PointerLatticeElement)r).getState().equals(this.State);
-        // HashSet<String> temp = new HashSet<String>();
-        // Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-        // for (String key : input.keySet()) {
-        //     if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-        //         return false;
-        // }
-        // for (String key : this.State.keySet()) {
-        //     if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-        //         return false;
-        // }
-        // return true;
+        HashSet<String> temp = new HashSet<String>();
+        Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
+        for (String key : input.keySet()) {
+            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
+                return false;
+        }
+        for (String key : this.State.keySet()) {
+            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
+                return false;
+        }
+        return true;
     }
 
     @Override
