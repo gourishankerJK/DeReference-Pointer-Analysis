@@ -12,10 +12,14 @@ public class ProgramPoint {
     private List<ProgramPoint> successors;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
-        this.latticeElement = latticeElement;
+        PointerLatticeElement s = (PointerLatticeElement)latticeElement;
+        PointerLatticeElement l = new PointerLatticeElement(s.getState());
+        this.latticeElement = l;
         this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
     }
+
+    
 
     public LatticeElement getLatticeElement() {
        return this.latticeElement;
