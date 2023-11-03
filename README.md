@@ -101,8 +101,97 @@ classDiagram
 
 ```mermaid
 sequenceDiagram
-    main->>PointerLatticePreProcess: Send soot body
+    main->>PointerLatticePreProcess: Sstmt2 soot body
     PointerLatticePreProcess->>main: return List<ProgramPoint>
-    main->>Kildall: Send preprocessed List<ProgramPoint>
+    main->>Kildall: Sstmt2 preprocessed List<ProgramPoint>
     Kildall->>main: return computed least-fixpoint as List<List<ProgramPoint>>
 ```
+
+### PointerLatticeElement - implementation
+
+#### Lattice Definition
+
+$PseudoVar$: This is the set of all allocation sites in the program. For example conider the following line in jimple
+
+`10: x := new BasicTest`
+
+The RHS in this assignment is treated as a pseudo-variable. The token used to represent pseudo variable is `new<lineNumber>`, in this example `new BasicTest` would be represented as `new10`
+
+Let $Var'=\{null\}\cup PseudoVar$ and $Field$ be the set of all field of any class in the program.
+
+Set of all elements in lattice is defined as
+$$PointerLattice:=(Var\to 2^{Var'})\bigcup (PseudoVar\times Field \to 2^{Var'})$$
+
+In code, the state of PointerLatticeElement is stored as a `Map<String, HashSet<String>>`. HashSet is used in order for easy updation (no need to worry about duplicates).
+
+#### Join operation
+
+Let $f_1, f_2\in PointerLattice$, then
+
+$$f_1 \sqcup f_2 = \lambda v.(f_1(v)\cup f_2(v)) \bigcup \lambda (v_1.f).(f_1(v_1.f)\cup f_2(v_1.f))$$
+
+#### Transfer function - assignment
+
+Strong updates, whenever lhs is of some reference type.
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x:=y)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x\to f_1(y)]$$
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x:=null)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x\to \{null\}]$$
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x:=new)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x\to \{new_{lineNumber}\}]$$
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x:=y.f)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x\to \bigcup_{e\in f_1(y).f} e]$$
+
+Weak updates for all the field type assignments
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x.f:=y)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x_1.f\to f_1(x_1.f)\cup f_1(y)]...[x_n.f\to f_1(x_n.f)\cup f_1(y)]$$
+
+where $f_1(x) = \{x_1, ..., x_n\}$
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x.f:=null)
+    l1 --f2--> stmt2:::stmt2
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x_1.f\to f_1(x_1.f)\cup null]...[x_n.f\to f_1(x_n.f)\cup null]$$
+
+```mermaid
+flowchart LR
+    stmt1:::hidden --f1--> l1(x:=new)
+    l1 --f2--> stmt2:::hidden
+```
+
+$$f_2 = \text{tf\_assign}(f_1)=f_1[x_1.f\to f_1(x_1.f)\cup null]...[x_n.f\to f_1(x_n.f)\cup new_{lineNumber}]$$
+
+In Jimple, `x.f=y.f` is not possible.
