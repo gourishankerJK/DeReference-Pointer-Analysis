@@ -93,6 +93,7 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public boolean equals(LatticeElement r) {
+
         HashSet<String> temp = new HashSet<String>();
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
         for (String key : input.keySet()) {
