@@ -151,14 +151,14 @@ public class Analysis extends PAVBase {
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
         Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
         for (ProgramPoint programPoint : result) {
-            Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.latticeElement).getState();
+            Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.getLatticeElement()).getState();
             for (String key : state.keySet()) {
                 if (state.get(key).size() == 0)
                     continue;
 
                 List<String> varList = new ArrayList<String>(state.get(key));
                 Collections.sort(varList);
-                List<Tag> tags = programPoint.statement.getTags();
+                List<Tag> tags = programPoint.getStmt().getTags();
                 ResultTuple tuple = new ResultTuple(method,
                         String.format("in%02d", Integer.parseInt(tags.get(tags.size() - 1).toString())), key, varList);
                 resultFormatted.add(tuple);
