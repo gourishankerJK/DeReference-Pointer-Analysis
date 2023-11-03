@@ -112,6 +112,7 @@ public class Analysis extends PAVBase {
             for (int i = 1; i < result.size(); i++) {
                 writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
             }
+             writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
             System.out.println("Logs of kildall written in "
                     + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
 
