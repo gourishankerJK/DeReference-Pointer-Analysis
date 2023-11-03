@@ -41,7 +41,7 @@ public class PointerLatticeElement implements LatticeElement {
         TreeMap<String, HashSet<String>> newState = new TreeMap<String, HashSet<String>>();
         for (String key : state.keySet()) {
             HashSet<String> value = new HashSet<String>();
-            value.addAll(state.get(key));
+            value.addAll(new HashSet<>(state.get(key)));
             newState.put(key, value);
         }
         this.State = newState;
@@ -68,16 +68,23 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement join_op(LatticeElement r) {
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
+         HashSet<String> temp = new HashSet<String>();
 
         TreeMap<String, HashSet<String>> joinElementState = new TreeMap<String, HashSet<String>>();
 
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
-            if (this.State.containsKey(key))
-                value.addAll(this.State.get(key));
-            joinElementState.put(key, value);
+            value.addAll(this.State.getOrDefault(key, temp));
+            joinElementState.put(key , value);
         }
+         for (String key : this.State.keySet()) {
+            HashSet<String> value = new HashSet<String>();
+            value.addAll(this.State.get(key));
+            value.addAll(input.getOrDefault(key, temp));
+                joinElementState.getOrDefault(key , temp);
+        }
+
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
 
         return (LatticeElement) joinElement;
@@ -86,9 +93,14 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public boolean equals(LatticeElement r) {
+        HashSet<String> temp = new HashSet<String>();
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
         for (String key : input.keySet()) {
-            if (!this.State.get(key).equals(input.get(key)))
+            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
+                return false;
+        }
+        for (String key : this.State.keySet()) {
+            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
                 return false;
         }
         return true;

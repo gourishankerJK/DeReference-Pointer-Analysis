@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Kildall {
     static List<List<ProgramPoint>> logFactLists = new ArrayList<>();
 
@@ -10,33 +9,33 @@ public class Kildall {
         while ((analysisPoint = GetMarkedProgramPoint(programPoints)) != null) {
             Propagate(analysisPoint);
         }
-        logFactLists.add(0 , programPoints);
+        logFactLists.add(0, programPoints);
+
         return logFactLists;
     }
 
     private static void Propagate(ProgramPoint analysisPoint) {
         int i = 0;
-        if (!analysisPoint.markedForPropagation)
+        if (!analysisPoint.isMarked())
             return;
         // Unmark and propagate to the successors
-        analysisPoint.markedForPropagation = false;
+        analysisPoint.setMarkPoint(false);
         List<ProgramPoint> logFact = new ArrayList<>();
-        for (ProgramPoint successor : analysisPoint.successors) {
+        for (ProgramPoint successor : analysisPoint.getSuccessors()) {
             LatticeElement joinElement;
-
-            if (analysisPoint.statement.branches()) {
-                joinElement = successor.latticeElement
-                        .join_op(analysisPoint.latticeElement.tf_condstmt(i == 1, analysisPoint.statement));
+            if (analysisPoint.getStmt().branches()) {
+                joinElement = successor.getLatticeElement()
+                        .join_op(analysisPoint.getLatticeElement().tf_condstmt(i == 1, analysisPoint.getStmt()));
             } else {
-                joinElement = successor.latticeElement
-                        .join_op(analysisPoint.latticeElement.tf_assignstmt(analysisPoint.statement));
+                joinElement = successor.getLatticeElement()
+                        .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
             }
             // Unmark the successor nodes based on the previous value
-            if (joinElement.equals(successor.latticeElement) && !successor.markedForPropagation) {
-                successor.markedForPropagation = false;
+            if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
+                successor.setMarkPoint(false);
             } else {
-                successor.markedForPropagation = true;
-                successor.latticeElement = joinElement;
+                successor.setMarkPoint(true);
+                successor.setLatticeElement(joinElement);
                 logFact.add(successor);
             }
             i++;
@@ -46,7 +45,7 @@ public class Kildall {
 
     private static ProgramPoint GetMarkedProgramPoint(List<ProgramPoint> programPoints) {
         for (ProgramPoint programPoint : programPoints) {
-            if (programPoint.markedForPropagation)
+            if (programPoint.isMarked())
                 return programPoint;
         }
         return null;
