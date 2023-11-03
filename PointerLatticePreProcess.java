@@ -32,7 +32,7 @@ public class PointerLatticePreProcess implements IPreProcess {
             for (Unit succ : graph.getSuccsOf(unit)) {
                 successors.add(mp.get(succ));
             }
-            mp.get(unit).successors = successors;
+            mp.get(unit).setSuccessors(successors);
         }
         return result;
     }
