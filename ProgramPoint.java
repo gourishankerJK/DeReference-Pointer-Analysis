@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import soot.jimple.Stmt;
+import soot.util.dot.DotGraph;
 
 /**
  * A class to hold the program point abstraction
@@ -13,7 +14,7 @@ public class ProgramPoint {
     private Stmt statement;
     private boolean markedForPropagation;
     private List<ProgramPoint> successors;
-    private HashSet<ProgramPoint> visited = new HashSet<>();
+    private String functionName;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         PointerLatticeElement s = (PointerLatticeElement) latticeElement;
@@ -22,6 +23,17 @@ public class ProgramPoint {
         this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
         this.successors = new ArrayList<>();
+        this.functionName = "X";
+    }
+
+    public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation, String functionName) {
+        PointerLatticeElement s = (PointerLatticeElement) latticeElement;
+        PointerLatticeElement l = new PointerLatticeElement(s.getState());
+        this.latticeElement = l;
+        this.statement = stmt;
+        this.markedForPropagation = markedForPropagation;
+        this.successors = new ArrayList<>();
+        this.functionName = functionName;
     }
 
     public LatticeElement getLatticeElement() {
@@ -67,18 +79,23 @@ public class ProgramPoint {
         System.out.println("\n____");
     }
 
-    public void printProgramPointsChain(int level) {
-        if (visited.contains(this))
-            return;
-        String str = "";
-        for (int i = 0; i < level; i++) {
-            str += "\t";
-        }
-        System.out.println(str + this.statement);
-        visited.add(this);
-        for (ProgramPoint p : this.successors) {
+    public void createCFG() {
+        DotGraph dotGraph = new DotGraph("CallGraph");
+        HashSet<ProgramPoint> visited = new HashSet<>();
+        _createCFG(this, dotGraph, visited);
+        dotGraph.plot("./Callgraph.dot");
+    }
 
-            p.printProgramPointsChain(level + 1);
+    private void _createCFG(ProgramPoint programPoint, DotGraph dotGraph, HashSet<ProgramPoint> visited) {
+        if (visited.contains(programPoint))
+            return;
+        String parent = programPoint.functionName+ "-> "+programPoint.statement.toString();
+        visited.add(programPoint);
+        for (ProgramPoint p : programPoint.successors) {
+            String children = p.functionName+"-> "+p.statement.toString();
+            dotGraph.drawEdge(parent, children);
+            _createCFG(p, dotGraph, visited);
         }
+
     }
 }

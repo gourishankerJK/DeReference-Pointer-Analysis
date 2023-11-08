@@ -7,8 +7,9 @@ public class BasicTest {
 
     public static BasicTest g(BasicTest t) {
         BasicTest v  = new BasicTest();
-        SizeOneNULLTest();
-        return v;
+    SizeOneNULLTest();
+        BasicTest v1 = new BasicTest();
+        return v1;
     }
 
     static BasicTest SizeOneNULLTest() {

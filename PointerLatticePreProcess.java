@@ -39,7 +39,8 @@ public class PointerLatticePreProcess implements IPreProcess {
         for (Unit unit : body.getUnits()) {
             unit.addTag(new LineNumberTag(lineno++));
             if (mp.get(unit) == null) {
-                ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true);
+                ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true,
+                        body.getMethod().getName());
                 mp.put(unit, programPoint);
                 result.add(programPoint);
             }
@@ -53,11 +54,13 @@ public class PointerLatticePreProcess implements IPreProcess {
                     StaticInvokeExpr invokeStmt = (StaticInvokeExpr) stmt.getInvokeExpr();
                     String name = invokeStmt.getMethod().getName();
                     Body fn = invokeStmt.getMethod().retrieveActiveBody();
+                    System.out.println(fn.getMethod().getName());
                     if (visited.getOrDefault(name, null) == null) {
                         Unit succ = fn.getUnits().getFirst();
                         visited.put(name, succ);
                         List<ProgramPoint> successor = new ArrayList<>();
-                        ProgramPoint p = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) succ, true);
+                        ProgramPoint p = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) succ, true,
+                                name);
                         successor.add(p);
                         result.add(p);
                         mp.put(succ, p);
@@ -72,17 +75,27 @@ public class PointerLatticePreProcess implements IPreProcess {
                     } else {
                         List<ProgramPoint> successor = new ArrayList<>();
                         ProgramPoint BackEdge = mp.get(visited.get(name));
+                        for (Unit succ : graph.getSuccsOf(unit)) {
+                        successor.add(mp.get(succ));
+                    }
                         successor.add(BackEdge);
+
+
                         mp.get(unit).setSuccessors(successor);
+                        
                     }
 
                 } else if (stmt instanceof ReturnStmt) {
+                    System.out.println(stmt);
                     List<Unit> callers = callerList.get(body);
+                    System.out.println(callers);
                     ProgramPoint returnStmt = mp.get(unit);
                     List<ProgramPoint> points = new ArrayList<>();
                     for (Unit caller : callers) {
+                        System.out.println(returnEdges.get(caller).get(0).getStmt());
                         points.addAll(returnEdges.get(caller));
                     }
+                   System.out.println(returnStmt.getStmt());
                     returnStmt.setSuccessors(points);
 
                 } else {
