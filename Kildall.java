@@ -38,7 +38,7 @@ public class Kildall {
                 successor.setLatticeElement(joinElement);
             }
             i++;
-            logFact.add(new ProgramPoint(successor.getLatticeElement() , successor.getStmt() ,successor.isMarked()));
+            logFact.add(new ProgramPoint(successor.getLatticeElement() , successor.getStmt() ,successor.isMarked() , "xyz"));
         }
         logFactLists.add(logFact);
     }

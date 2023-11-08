@@ -1,35 +1,28 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-
 import soot.Body;
 import soot.Local;
 import soot.RefType;
-import soot.SootMethod;
 import soot.Unit;
-import soot.jimple.Expr;
-import soot.jimple.InvokeExpr;
-import soot.jimple.InvokeStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
-import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JReturnVoidStmt;
-import soot.jimple.internal.JStaticInvokeExpr;
 import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 
 public class PointerLatticePreProcess implements IPreProcess {
 
     List<ProgramPoint> result = new ArrayList<ProgramPoint>();
-    HashMap<String, Unit> visited = new HashMap<>();
+    HashMap<String, Unit> FuncSigToEntryUnit = new HashMap<>();
     HashMap<Unit, ProgramPoint> UnitToPP = new HashMap<>();
-    HashMap<Body, List<Unit>> callerList = new HashMap<>();
-    HashMap<Unit, List<ProgramPoint>> UnitToReturnPP = new HashMap<>();
+    HashMap<Body, List<Unit>> functionCallerList = new HashMap<>();
+    HashMap<Unit, List<ProgramPoint>> UnitToReturnPPs = new HashMap<>();
 
     int lineno = 0;
+    int label = 0;
 
     public List<ProgramPoint> PreProcess(Body body) {
         List<String> variables = GetRefTypeVariables(body);
@@ -41,10 +34,11 @@ public class PointerLatticePreProcess implements IPreProcess {
             unit.addTag(new LineNumberTag(lineno++));
             if (UnitToPP.get(unit) == null) {
                 ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true,
-                        body.getMethod().getSubSignature());
+                        body.getMethod().getSubSignature(), Integer.toString(label++));
                 UnitToPP.put(unit, programPoint);
                 result.add(programPoint);
-            }
+            } else
+                result.add(UnitToPP.get(unit));
         }
 
         // second pass to link the successors of each program point
@@ -53,60 +47,72 @@ public class PointerLatticePreProcess implements IPreProcess {
                 Stmt stmt = (Stmt) unit;
                 if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
                     StaticInvokeExpr invokeStmt = (StaticInvokeExpr) stmt.getInvokeExpr();
-                    String name = invokeStmt.getMethod().getSignature();
-                 
-                    Body fn = invokeStmt.getMethod().retrieveActiveBody();
-                    if (visited.getOrDefault(name, null) == null) {
-                        Unit succ = fn.getUnits().getFirst();
-                        visited.put(name, succ);
-                        List<ProgramPoint> successor = new ArrayList<>();
-                        ProgramPoint p = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) succ, true,
-                                invokeStmt.getMethod().getSubSignature());
-                        successor.add(p);
-                        result.add(p);
-                        UnitToPP.put(succ, p);
-                        UnitToPP.get(unit).setSuccessors(successor);
-                        List<ProgramPoint> returnPoints = new ArrayList<>();
-                        for (Unit succs : graph.getSuccsOf(unit)) {
-                            returnPoints.add(UnitToPP.get(succs));
-                        }
-                        callerList.put(fn, Arrays.asList(unit));
-                        UnitToReturnPP.put(unit, returnPoints);
-                        PreProcess(fn);
+                    String functionSignature = invokeStmt.getMethod().getSignature();
+                    if (FuncSigToEntryUnit.getOrDefault(functionSignature, null) == null) {
+                        AddCallEdgeToCalledFunction(variables, graph, unit, invokeStmt, functionSignature);
+                        PreProcess(invokeStmt.getMethod().retrieveActiveBody());
                     } else {
-                        List<ProgramPoint> successor = new ArrayList<>();
-                        ProgramPoint BackEdge = UnitToPP.get(visited.get(name));
-                        for (Unit succ : graph.getSuccsOf(unit)) {
-                            successor.add(UnitToPP.get(succ));
-                        }
-                        successor.add(BackEdge);
-
-                        UnitToPP.get(unit).setSuccessors(successor);
-
+                        AddBackCallEdge(graph, unit, functionSignature);
                     }
 
                 } else if ((stmt instanceof ReturnStmt) || (stmt instanceof JReturnVoidStmt)) {
-                    List<Unit> callers = callerList.getOrDefault(body, new ArrayList<Unit>());
-                    ProgramPoint returnStmt = UnitToPP.get(unit);
-                    List<ProgramPoint> points = new ArrayList<>();
-                    for (Unit caller : callers) {
-                        List<ProgramPoint> p = UnitToReturnPP.get(caller);
-                        points.addAll(p);
-                    }
-                    returnStmt.setSuccessors(points);
+                    AddReturnEdge(body, unit);
 
                 } else {
-                    List<ProgramPoint> successors = new ArrayList<>();
-                    for (Unit succ : graph.getSuccsOf(unit)) {
-                        successors.add(UnitToPP.get(succ));
-                    }
-                    UnitToPP.get(unit).setSuccessors(successors);
+                    AddEdgeIntraProcedural(graph, unit);
                 }
 
             }
         }
         return result;
 
+    }
+
+    private void AddBackCallEdge(ExceptionalUnitGraph graph, Unit unit, String name) {
+        List<ProgramPoint> successor = new ArrayList<>();
+        ProgramPoint BackEdge = UnitToPP.get(FuncSigToEntryUnit.get(name));
+        for (Unit succ : graph.getSuccsOf(unit)) {
+            successor.add(UnitToPP.get(succ));
+        }
+        successor.add(BackEdge);
+
+        UnitToPP.get(unit).setSuccessors(successor);
+    }
+
+    private void AddEdgeIntraProcedural(ExceptionalUnitGraph graph, Unit unit) {
+        List<ProgramPoint> successors = new ArrayList<>();
+        for (Unit succ : graph.getSuccsOf(unit)) {
+            successors.add(UnitToPP.get(succ));
+        }
+        UnitToPP.get(unit).setSuccessors(successors);
+    }
+
+    private void AddReturnEdge(Body body, Unit unit) {
+        List<Unit> callersOfCurrentFunction = functionCallerList.getOrDefault(body, new ArrayList<Unit>());
+        ProgramPoint returnStmtPP = UnitToPP.get(unit);
+        List<ProgramPoint> retunProgramPoints = new ArrayList<>();
+        for (Unit caller : callersOfCurrentFunction) {
+            retunProgramPoints.addAll(UnitToReturnPPs.get(caller));
+        }
+        returnStmtPP.setSuccessors(retunProgramPoints);
+    }
+
+    private void AddCallEdgeToCalledFunction(List<String> variables, ExceptionalUnitGraph graph, Unit unit,
+            StaticInvokeExpr invokeStmt, String functionSignature) {
+        Body functionBody = invokeStmt.getMethod().retrieveActiveBody();
+        Unit targetOfCurrentFunction = functionBody.getUnits().getFirst();
+        FuncSigToEntryUnit.put(functionSignature, targetOfCurrentFunction);
+        ProgramPoint programPointofTarget = new ProgramPoint(new PointerLatticeElement(variables),
+                (Stmt) targetOfCurrentFunction, true,
+                functionBody.getMethod().getSubSignature(), Integer.toString(label++));
+        UnitToPP.put(targetOfCurrentFunction, programPointofTarget);
+        UnitToPP.get(unit).setSuccessors(Arrays.asList(programPointofTarget));
+        List<ProgramPoint> returnProgramPoints = new ArrayList<>();
+        for (Unit returnPointsOfCalledFunction : graph.getSuccsOf(unit)) {
+            returnProgramPoints.add(UnitToPP.get(returnPointsOfCalledFunction));
+        }
+        functionCallerList.put(functionBody, Arrays.asList(unit));
+        UnitToReturnPPs.put(unit, returnProgramPoints);
     }
 
     public static List<String> GetRefTypeVariables(Body body) {
