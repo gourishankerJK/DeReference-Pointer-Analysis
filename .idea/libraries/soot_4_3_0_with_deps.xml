@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="soot-4.3.0-with-deps">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/pkgs/soot-4.3.0-with-deps.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

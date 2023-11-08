@@ -1,13 +1,17 @@
 import java.util.HashSet;
+
+import soot.Body;
 import soot.NullType;
 import soot.RefType;
 import soot.Type;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.EqExpr;
+import soot.jimple.Expr;
 import soot.jimple.IfStmt;
 import soot.jimple.NeExpr;
 import soot.jimple.NullConstant;
+import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
@@ -68,7 +72,7 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement join_op(LatticeElement r) {
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-         HashSet<String> temp = new HashSet<String>();
+        HashSet<String> temp = new HashSet<String>();
 
         TreeMap<String, HashSet<String>> joinElementState = new TreeMap<String, HashSet<String>>();
 
@@ -76,13 +80,13 @@ public class PointerLatticeElement implements LatticeElement {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
             value.addAll(this.State.getOrDefault(key, temp));
-            joinElementState.put(key , value);
+            joinElementState.put(key, value);
         }
-         for (String key : this.State.keySet()) {
+        for (String key : this.State.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(this.State.get(key));
             value.addAll(input.getOrDefault(key, temp));
-                joinElementState.getOrDefault(key , temp);
+            joinElementState.getOrDefault(key, temp);
         }
 
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -127,7 +131,14 @@ public class PointerLatticeElement implements LatticeElement {
      */
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        if (st instanceof IfStmt) {
+        if (st.containsInvokeExpr()) {
+            Expr expr = st.getInvokeExpr();
+
+            if (expr instanceof StaticInvokeExpr) {
+
+               
+            }
+        } else if (st instanceof IfStmt) {
             return handleIfCondition(b, (IfStmt) st);
         }
 

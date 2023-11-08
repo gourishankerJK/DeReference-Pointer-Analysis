@@ -17,13 +17,22 @@ import soot.options.Options;
 import soot.tagkit.Tag;
 import soot.Unit;
 import soot.Scene;
+import soot.SceneTransformer;
 import soot.Body;
+import soot.BodyTransformer;
+import soot.MethodOrMethodContext;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Transform;
 import soot.jimple.Stmt;
+import soot.jimple.toolkits.callgraph.CallGraph;
+import soot.jimple.toolkits.callgraph.CallGraphBuilder;
+import soot.jimple.toolkits.callgraph.Edge;
+import soot.jimple.toolkits.callgraph.Sources;
+import soot.jimple.toolkits.callgraph.Targets;
 import soot.UnitPrinter;
 import soot.NormalUnitPrinter;
-
+import soot.PackManager;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.util.cfgcmd.CFGToDotGraph;
 import soot.util.dot.DotGraph;
@@ -37,6 +46,8 @@ public class Analysis extends PAVBase {
          * XXX you can implement your analysis here
          ************************************************************/
     }
+
+    static HashMap<SootMethod, HashSet<SootMethod>> adjHashMap = new HashMap<SootMethod, HashSet<SootMethod>>();
 
     public static void main(String[] args) throws IOException {
         if (args.length < 4) {
@@ -68,7 +79,8 @@ public class Analysis extends PAVBase {
         Options.v().set_output_format(Options.output_format_none);
         Options.v().set_keep_line_number(true);
         Options.v().setPhaseOption("cg.spark", "verbose:false");
-
+        
+        PackManager.v().runPacks();
         Scene.v().loadNecessaryClasses();
 
         SootClass entryClass = Scene.v().getSootClassUnsafe(mClass);
@@ -92,34 +104,74 @@ public class Analysis extends PAVBase {
                 break;
             }
         }
+        // Scene.v().addBasicClass(mClass, SootClass.SIGNATURES)
+
+        CallGraphBuilder builder = new CallGraphBuilder();
+        builder.build();
+        
+        CallGraph cg = Scene.v().getCallGraph();
+
+        // Create a DotGraph object to represent the call graph
+        DotGraph dotGraph = new DotGraph("CallGraph");
+
+        // Iterate over the edges of the call graph and add them to the DotGraph
+         getDotFilePath(targetMethod, cg, dotGraph);
 
         if (methodFound) {
-            printInfo(targetMethod);
+            // printInfo(targetMethod);
             /*************************************************************
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
              *************************************************************/
-            // Preprocess for the pointer lattice element
+
             IPreProcess preProcess = new PointerLatticePreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
+            List<ProgramPoint> preProcessedBody =
+            preProcess.PreProcess(targetMethod.retrieveActiveBody());
+            preProcessedBody.get(0).printProgramPointsChain(0);
+            // for (ProgramPoint p : preProcessedBody) {
+            //          p.printProgramPoints();
+            // }
 
             // Compute Least fix point using Kildall's algorithms
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
             writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
             System.out.println("Final output written in "
-                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
+            + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
             for (int i = 1; i < result.size(); i++) {
-                writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
+            writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
             }
-             writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
+            writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
             System.out.println("Logs of kildall written in "
-                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
+            + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
+            tMethod));
 
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
         }
+    }
+
+    private static void getDotFilePath(SootMethod targetMethod, CallGraph callGraph, DotGraph dotGraph) {
+
+        Iterator<Edge> edgeIterator = callGraph.edgesOutOf(targetMethod);
+        while (edgeIterator.hasNext()) {
+            Edge edge = edgeIterator.next();
+            SootMethod source = edge.src().method();
+            SootMethod target = edge.tgt().method();
+
+            if (!adjHashMap.getOrDefault(source, new HashSet<>()).contains(target)) {
+                HashSet<SootMethod> t = adjHashMap.getOrDefault(source, new HashSet<>());
+                t.add(target);
+                adjHashMap.put(source, t);
+                dotGraph.drawEdge(source.getSignature(), target.getSignature());
+                getDotFilePath(edge.tgt().method(), callGraph, dotGraph);
+            }
+        }
+
+        // Generate a DOT file for the call graph
+        String dotFilePath = "./Callgraph.dot";
+        dotGraph.plot(dotFilePath);
     }
 
     private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,

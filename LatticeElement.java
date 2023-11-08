@@ -1,6 +1,5 @@
 import soot.jimple.Stmt;
 
-
 // Receiver object of LatticeElement possess the existing dataflow
 // fact at a programpoint.  x.join(y), here x, y are elements of type,
 // LatticeElement and x is the receiver object.
@@ -12,13 +11,12 @@ import soot.jimple.Stmt;
 // LatticeElement and should work on any implementation of
 // LatticElement for any analysis.
 
-interface LatticeElement
-{
+interface LatticeElement {
 
     public LatticeElement join_op(LatticeElement r);
     // represents: "this" JOIN "r"
     // this - the existing dataflow fact
-    // r    - the incoming dataflow fact
+    // r - the incoming dataflow fact
 
     public boolean equals(LatticeElement r);
 
@@ -26,4 +24,3 @@ interface LatticeElement
 
     public LatticeElement tf_condstmt(boolean b, Stmt st);
 }
-
