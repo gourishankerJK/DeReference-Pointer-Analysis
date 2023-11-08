@@ -5,6 +5,7 @@ import java.util.List;
 
 import soot.jimple.Stmt;
 import soot.util.dot.DotGraph;
+import soot.util.dot.DotGraphNode;
 
 /**
  * A class to hold the program point abstraction
@@ -59,7 +60,7 @@ public class ProgramPoint {
     }
 
     public void setSuccessors(List<ProgramPoint> s) {
-        this.successors = s;
+        if(s.size() != 0) this.successors = s;
     }
 
     public boolean isMarked() {
@@ -87,13 +88,21 @@ public class ProgramPoint {
     }
 
     private void _createCFG(ProgramPoint programPoint, DotGraph dotGraph, HashSet<ProgramPoint> visited) {
-        if (visited.contains(programPoint))
-            return;
-        String parent = programPoint.functionName+ "-> "+programPoint.statement.toString();
+        if (visited.contains(programPoint)) return;
+        String parent = programPoint.functionName+ "\n"+programPoint.statement.toString();
         visited.add(programPoint);
+        String bgColor = "orange";
+        if(programPoint.statement.getJavaSourceStartLineNumber() %2 == 0){
+            bgColor = "lightpink";
+        }
+        DotGraphNode parentNode = dotGraph.drawNode(parent);
+         parentNode.setAttribute("color", "green");    
+        parentNode.setAttribute("fillcolor",bgColor);
+        parentNode.setStyle("filled");
+        parentNode.setAttribute("fontsize" , "20");
         for (ProgramPoint p : programPoint.successors) {
-            String children = p.functionName+"-> "+p.statement.toString();
-            dotGraph.drawEdge(parent, children);
+            String children = p.functionName+"\n"+p.statement.toString();
+            dotGraph.drawEdge(parent, children).setAttribute("color", "blue");;
             _createCFG(p, dotGraph, visited);
         }
 

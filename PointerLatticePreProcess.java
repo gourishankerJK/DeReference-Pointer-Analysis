@@ -16,6 +16,7 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JInvokeStmt;
+import soot.jimple.internal.JReturnVoidStmt;
 import soot.jimple.internal.JStaticInvokeExpr;
 import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.ExceptionalUnitGraph;
@@ -24,9 +25,9 @@ public class PointerLatticePreProcess implements IPreProcess {
 
     List<ProgramPoint> result = new ArrayList<ProgramPoint>();
     HashMap<String, Unit> visited = new HashMap<>();
-    HashMap<Unit, ProgramPoint> mp = new HashMap<>();
+    HashMap<Unit, ProgramPoint> UnitToPP = new HashMap<>();
     HashMap<Body, List<Unit>> callerList = new HashMap<>();
-    HashMap<Unit, List<ProgramPoint>> returnEdges = new HashMap<>();
+    HashMap<Unit, List<ProgramPoint>> UnitToReturnPP = new HashMap<>();
 
     int lineno = 0;
 
@@ -38,10 +39,10 @@ public class PointerLatticePreProcess implements IPreProcess {
 
         for (Unit unit : body.getUnits()) {
             unit.addTag(new LineNumberTag(lineno++));
-            if (mp.get(unit) == null) {
+            if (UnitToPP.get(unit) == null) {
                 ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true,
-                        body.getMethod().getName());
-                mp.put(unit, programPoint);
+                        body.getMethod().getSubSignature());
+                UnitToPP.put(unit, programPoint);
                 result.add(programPoint);
             }
         }
@@ -52,58 +53,54 @@ public class PointerLatticePreProcess implements IPreProcess {
                 Stmt stmt = (Stmt) unit;
                 if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
                     StaticInvokeExpr invokeStmt = (StaticInvokeExpr) stmt.getInvokeExpr();
-                    String name = invokeStmt.getMethod().getName();
+                    String name = invokeStmt.getMethod().getSignature();
+                 
                     Body fn = invokeStmt.getMethod().retrieveActiveBody();
-                    System.out.println(fn.getMethod().getName());
                     if (visited.getOrDefault(name, null) == null) {
                         Unit succ = fn.getUnits().getFirst();
                         visited.put(name, succ);
                         List<ProgramPoint> successor = new ArrayList<>();
                         ProgramPoint p = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) succ, true,
-                                name);
+                                invokeStmt.getMethod().getSubSignature());
                         successor.add(p);
                         result.add(p);
-                        mp.put(succ, p);
-                        mp.get(unit).setSuccessors(successor);
+                        UnitToPP.put(succ, p);
+                        UnitToPP.get(unit).setSuccessors(successor);
                         List<ProgramPoint> returnPoints = new ArrayList<>();
                         for (Unit succs : graph.getSuccsOf(unit)) {
-                            returnPoints.add(mp.get(succs));
+                            returnPoints.add(UnitToPP.get(succs));
                         }
                         callerList.put(fn, Arrays.asList(unit));
-                        returnEdges.put(unit, returnPoints);
+                        UnitToReturnPP.put(unit, returnPoints);
                         PreProcess(fn);
                     } else {
                         List<ProgramPoint> successor = new ArrayList<>();
-                        ProgramPoint BackEdge = mp.get(visited.get(name));
+                        ProgramPoint BackEdge = UnitToPP.get(visited.get(name));
                         for (Unit succ : graph.getSuccsOf(unit)) {
-                        successor.add(mp.get(succ));
-                    }
+                            successor.add(UnitToPP.get(succ));
+                        }
                         successor.add(BackEdge);
 
+                        UnitToPP.get(unit).setSuccessors(successor);
 
-                        mp.get(unit).setSuccessors(successor);
-                        
                     }
 
-                } else if (stmt instanceof ReturnStmt) {
-                    System.out.println(stmt);
-                    List<Unit> callers = callerList.get(body);
-                    System.out.println(callers);
-                    ProgramPoint returnStmt = mp.get(unit);
+                } else if ((stmt instanceof ReturnStmt) || (stmt instanceof JReturnVoidStmt)) {
+                    List<Unit> callers = callerList.getOrDefault(body, new ArrayList<Unit>());
+                    ProgramPoint returnStmt = UnitToPP.get(unit);
                     List<ProgramPoint> points = new ArrayList<>();
                     for (Unit caller : callers) {
-                        System.out.println(returnEdges.get(caller).get(0).getStmt());
-                        points.addAll(returnEdges.get(caller));
+                        List<ProgramPoint> p = UnitToReturnPP.get(caller);
+                        points.addAll(p);
                     }
-                   System.out.println(returnStmt.getStmt());
                     returnStmt.setSuccessors(points);
 
                 } else {
                     List<ProgramPoint> successors = new ArrayList<>();
                     for (Unit succ : graph.getSuccsOf(unit)) {
-                        successors.add(mp.get(succ));
+                        successors.add(UnitToPP.get(succ));
                     }
-                    mp.get(unit).setSuccessors(successors);
+                    UnitToPP.get(unit).setSuccessors(successors);
                 }
 
             }

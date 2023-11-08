@@ -6,10 +6,14 @@ public class BasicTest {
     }
 
     public static BasicTest g(BasicTest t) {
-        BasicTest v  = new BasicTest();
-    SizeOneNULLTest();
-        BasicTest v1 = new BasicTest();
-        return v1;
+        BasicTest v = new BasicTest();
+        g(v);
+        return v;
+    }
+    public static BasicTest g(BasicTest t , BasicTest t1) {
+        BasicTest v = new BasicTest();
+        g(v);
+        return g(v , g(v));
     }
 
     static BasicTest SizeOneNULLTest() {
@@ -18,7 +22,7 @@ public class BasicTest {
         BasicTest v3 = new BasicTest();
         v1.f = v2;
         v2.f = v3;
-       
+
         v1.f = v2.f;
         g(v1);
         BothNUll();
@@ -47,8 +51,8 @@ public class BasicTest {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
-         v1 = g(v1);
-         v2.f = v1;
+        v1 = g(v1);
+        v2.f = v1;
     }
 
     public static void conditional_check() {
