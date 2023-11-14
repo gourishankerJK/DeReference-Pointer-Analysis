@@ -77,15 +77,40 @@ public class BasicTest {
 
     }
 
+    static void nullify(BasicTest x) {
+        x.f = null;
+        x.g = null;
+        nullify(x);
+        return;
+    }
+    static boolean conditional(BasicTest x) {
+        return x.f == null;
+    }
+    static int multipleReturn(BasicTest x) {
+        if (x.f == null) {
+            return 0;
+        } else {
+            return 3;
+        }
+    }
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        v2.f = v2;
-        if (value <= 100) {
-            v2.f = v1;
-        } else
+        if (conditional(v2)) {
             v2.f = null;
+        } else {
+            v2.f = v1;
+        }
+        nullify(v1);
+        nullify(v2);
+        multipleReturn(v2);
         // Situation 4 partially -- union for an object field
+    }
+    static void doubleRec2(BasicTest x) {
+        doubleRec1(x);
+    }
+    static void doubleRec1(BasicTest x) {
+        doubleRec2(x);
     }
 
     static void fun4(int value) {

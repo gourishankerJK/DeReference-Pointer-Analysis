@@ -10,4 +10,5 @@ set -e
 
 
 # XXX you can add / delete / comment / uncomment lines below
-#./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "fun3"
+./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "fun3"
+dot -Tpng callgraph.dot -o callgraph.png

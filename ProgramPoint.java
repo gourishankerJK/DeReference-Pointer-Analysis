@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 import soot.jimple.Stmt;
@@ -10,6 +11,11 @@ public class ProgramPoint {
     private Stmt statement;
     private boolean markedForPropagation;
     private List<ProgramPoint> successors;
+	public ProgramPoint callSuccessor;
+    public String methodName;
+    public int callEdgeId;
+	public List<ProgramPoint> returnSuccessors;
+    public List<Integer> returnEdgeIds;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         PointerLatticeElement s = (PointerLatticeElement)latticeElement;
@@ -17,6 +23,8 @@ public class ProgramPoint {
         this.latticeElement = l;
         this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
+        this.returnEdgeIds = new ArrayList<>();
+        this.returnSuccessors = new ArrayList<>();
     }
 
     
@@ -45,6 +53,14 @@ public class ProgramPoint {
 
     public void setSuccessors(List<ProgramPoint> s) {
         this.successors = s;
+    }
+
+    public void addSuccessors(List<ProgramPoint> s) {
+        this.successors.addAll(s);
+    }
+
+    public void addSuccessor(ProgramPoint s) {
+        this.successors.add(s);
     }
 
     public boolean isMarked() {

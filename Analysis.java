@@ -100,8 +100,11 @@ public class Analysis extends PAVBase {
              * which performs the Kildalls iterations over the LatticeElement.
              *************************************************************/
             // Preprocess for the pointer lattice element
-            IPreProcess preProcess = new PointerLatticePreProcess();
+            IPreProcess preProcess = new ApproximateCallStringPreProcess();
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
+
+            MakeInterProceduralGraph(preProcessedBody);
+
 
             // Compute Least fix point using Kildall's algorithms
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
@@ -112,7 +115,7 @@ public class Analysis extends PAVBase {
             for (int i = 1; i < result.size(); i++) {
                 writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
             }
-             writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
+            writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
             System.out.println("Logs of kildall written in "
                     + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
 
@@ -120,6 +123,37 @@ public class Analysis extends PAVBase {
         } else {
             System.out.println("Method not found: " + tMethod);
         }
+    }
+
+    private static void MakeInterProceduralGraph(List<ProgramPoint> preProcessedBody) throws IOException {
+        
+        FileWriter fileWriter = new FileWriter(String.format("./callgraph.dot"));
+        int j=0;
+        fileWriter.write("digraph G {node [shape=\"Mrectangle\"]" + System.lineSeparator());
+        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator());
+        String currentName = preProcessedBody.get(0).methodName;
+        for (ProgramPoint pp : preProcessedBody) {
+            for (ProgramPoint s: pp.getSuccessors()) {
+                if (pp.methodName != currentName) {
+                    fileWriter.write( "}" + "subgraph cluster_" + j++ + " {" + System.lineSeparator());
+                    currentName = pp.methodName;
+                }
+                fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \""+ s.methodName + " " + s.getStmt() + "\"" + System.lineSeparator());
+            }
+        }
+        fileWriter.write("}" + System.lineSeparator());
+        for (ProgramPoint pp: preProcessedBody) {
+            if (pp.callSuccessor!=null) {
+                fileWriter.write("\""+ pp.methodName + " " + pp.getStmt() + "\" -> \""+ pp.callSuccessor.methodName + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\", style=dotted ]" + System.lineSeparator());
+            }
+            int k=0;
+            for(ProgramPoint returnPoints: pp.returnSuccessors) {
+                fileWriter.write("\"" + pp.methodName + " "+ pp.getStmt() + "\" -> \""+ returnPoints.methodName + " " + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k)+ "\", style=dotted ]" + System.lineSeparator());
+                k++;
+            }
+        }
+        fileWriter.write("}");
+        fileWriter.close();
     }
 
     private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,
