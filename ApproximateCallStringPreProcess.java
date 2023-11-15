@@ -18,7 +18,6 @@ public class ApproximateCallStringPreProcess implements IPreProcess {
 
     private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
-    static Integer callsiteId = 0;
 
     public List<ProgramPoint> PreProcess(Body body) {
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
@@ -63,15 +62,15 @@ public class ApproximateCallStringPreProcess implements IPreProcess {
                     result.addAll(newBody);
                 }
                 unitToProgramPoint.get(unit).callSuccessor = (functionCallMap.get(functionSignature));
-                unitToProgramPoint.get(unit).callEdgeId = callsiteId;
+                String callEdgeId = String.format("%s.%s.in%02d", body.getMethod().getDeclaringClass() ,invokeExpr.getMethod().getName(), Integer.parseInt(stmt.getTags().get(stmt.getTags().size()-1).toString()));
+                unitToProgramPoint.get(unit).callEdgeId = callEdgeId;
                 // Here assumption is that from one statement there can only be one call, and its successor can only be one statement.
                 for (Unit succ : graph.getSuccsOf(unit)) {
                     for(ProgramPoint retSucc: functionReturnMap.get(functionSignature)) {
                         retSucc.returnSuccessors.add(unitToProgramPoint.get(succ));
-                        retSucc.returnEdgeIds.add(callsiteId);
+                        retSucc.returnEdgeIds.add(callEdgeId);
                     }
                 }
-                callsiteId++;
             }
         }
         return result;

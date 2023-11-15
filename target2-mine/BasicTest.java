@@ -83,11 +83,12 @@ public class BasicTest {
         nullify(x);
         return;
     }
-    static boolean conditional(BasicTest x) {
-        return x.f == null;
+    static boolean conditional(BasicTest x, BasicTest y) {
+        return x.f == y.f;
     }
     static int multipleReturn(BasicTest x) {
-        if (x.f == null) {
+        if (conditional(x, null)) {
+            x.f = null;
             return 0;
         } else {
             return 3;
@@ -96,7 +97,7 @@ public class BasicTest {
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        if (conditional(v2)) {
+        if (conditional(v1, v2)) {
             v2.f = null;
         } else {
             v2.f = v1;
