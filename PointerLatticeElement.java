@@ -68,7 +68,7 @@ public class PointerLatticeElement implements LatticeElement {
     @Override
     public LatticeElement join_op(LatticeElement r) {
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-         HashSet<String> temp = new HashSet<String>();
+        HashSet<String> temp = new HashSet<String>();
 
         TreeMap<String, HashSet<String>> joinElementState = new TreeMap<String, HashSet<String>>();
 
@@ -76,13 +76,13 @@ public class PointerLatticeElement implements LatticeElement {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
             value.addAll(this.State.getOrDefault(key, temp));
-            joinElementState.put(key , value);
+            joinElementState.put(key, value);
         }
-         for (String key : this.State.keySet()) {
+        for (String key : this.State.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(this.State.get(key));
             value.addAll(input.getOrDefault(key, temp));
-                joinElementState.getOrDefault(key , temp);
+            joinElementState.getOrDefault(key, temp);
         }
 
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -265,6 +265,12 @@ public class PointerLatticeElement implements LatticeElement {
             result.State.get(key).clear();
         }
         return result;
+    }
+
+    public PointerLatticeElement clearState(String var) {
+        if (this.State.containsKey(var))
+            this.State.get(var).clear();
+        return this;
     }
 
     /**

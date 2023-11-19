@@ -30,7 +30,7 @@ public class ApproximateCallStringPreProcess implements IPreProcess {
         // the line numbers
         for (Unit unit : body.getUnits()) {
             unit.addTag(new LineNumberTag(lineno++));
-            ProgramPoint programPoint = new ProgramPoint(new PointerLatticeElement(variables), (Stmt) unit, true);
+            ProgramPoint programPoint = new ProgramPoint(new ApproximateCallStringElement(variables), (Stmt) unit, true);
             programPoint.methodName = body.getMethod().getSubSignature();
             unitToProgramPoint.put(unit, programPoint);
             result.add(programPoint);

@@ -11,15 +11,15 @@ public class ProgramPoint {
     private Stmt statement;
     private boolean markedForPropagation;
     private List<ProgramPoint> successors;
-	public ProgramPoint callSuccessor;
+    public ProgramPoint callSuccessor;
     public String methodName;
     public int callEdgeId;
-	public List<ProgramPoint> returnSuccessors;
+    public List<ProgramPoint> returnSuccessors;
     public List<Integer> returnEdgeIds;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
-        PointerLatticeElement s = (PointerLatticeElement)latticeElement;
-        PointerLatticeElement l = new PointerLatticeElement(s.getState());
+        ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
+        ApproximateCallStringElement l = new ApproximateCallStringElement(s.getState());
         this.latticeElement = l;
         this.statement = stmt;
         this.markedForPropagation = markedForPropagation;
@@ -27,15 +27,13 @@ public class ProgramPoint {
         this.returnSuccessors = new ArrayList<>();
     }
 
-    
-
     public LatticeElement getLatticeElement() {
-       return this.latticeElement;
+        return this.latticeElement;
     }
 
     public void setLatticeElement(LatticeElement latticeElement) {
-        PointerLatticeElement s = (PointerLatticeElement)latticeElement;
-        PointerLatticeElement l = new PointerLatticeElement(s.getState());
+        ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
+        ApproximateCallStringElement l = new ApproximateCallStringElement(s.getState());
         this.latticeElement = l;
     }
 

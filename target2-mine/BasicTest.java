@@ -2,12 +2,20 @@ public class BasicTest {
     BasicTest f, g;
 
     static public BasicTest f() {
+        
+        g(new BasicTest() , 1, new BasicTest() , 0);
         return new BasicTest();
     }
 
-    public BasicTest g() {
+    static public BasicTest g() {
+         f();
         return new BasicTest();
     }
+    static public BasicTest g(BasicTest v1 ,int j, BasicTest v2 , int i) {
+         f();
+        return new BasicTest();
+    }
+
 
     static BasicTest SizeOneNULLTest() {
         BasicTest v1 = new BasicTest();
@@ -36,11 +44,11 @@ public class BasicTest {
         }
 
     }
-
     static void fun1() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
+      g();
     }
 
     public static void conditional_check() {
