@@ -13,9 +13,9 @@ public class ProgramPoint {
     private List<ProgramPoint> successors;
     public ProgramPoint callSuccessor;
     public String methodName;
-    public int callEdgeId;
-    public List<ProgramPoint> returnSuccessors;
-    public List<Integer> returnEdgeIds;
+    public String callEdgeId;
+	public List<ProgramPoint> returnSuccessors;
+    public List<String> returnEdgeIds;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
