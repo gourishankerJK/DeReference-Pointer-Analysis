@@ -100,9 +100,8 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
 
     public static String getAllocationSiteSymbol(Stmt st) {
         CustomTag lineNo = (CustomTag) st.getTag("lineNumberTag");
-        CustomTag baseClass = (CustomTag) st.getTag("baseClass");
         CustomTag functionName = (CustomTag) st.getTag("functionName");
-        return String.format("%s.%s.new%02d", baseClass.getStringTag(), functionName.getStringTag(),
+        return String.format("%s.new%02d", functionName.getStringTag(),
                 lineNo.getLineNumber());
     }
 

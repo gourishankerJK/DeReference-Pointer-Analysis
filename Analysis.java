@@ -210,6 +210,26 @@ public class Analysis extends PAVBase {
         return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
+    private static String formatEntry(Map.Entry<String, HashSet<String>> p) {
+        String res = "";
+        if (p.getKey().contains("::")) {
+            res += p.getKey().split("::")[1];
+        } else {
+            res += p.getKey();
+        }
+        res += ": {";
+        int i = 0;
+        for (String s : p.getValue()) {
+            i++;
+            if (i == p.getValue().size())
+                res += s;
+            else
+                res += s + ", ";
+        }
+        res += "}";
+        return res;
+    }
+
     private static String printResult(List<ProgramPoint> result, String directory, String tClass, String tMethod) {
         String ans = "";
         for (ProgramPoint programPoint : result) {
@@ -219,11 +239,14 @@ public class Analysis extends PAVBase {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
                     if (p.getValue().size() != 0
-                            && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*"))) {
-                        ans += (baseClass + "." + programPoint.methodName + ": in"
-                                + getLineNumber(programPoint.getStmt())
+                            && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*")) &&
+                            (p.getKey().startsWith(programPoint.methodName)
+                                    || !p.getKey().contains("::") && !p.getKey().contains("@"))) {
+                        ans += (baseClass + "." + programPoint.methodName + ": "
+                                + String.format("in%02d", getLineNumber(programPoint.getStmt()))
+
                                 + " "
-                                + entry.getKey() + " => " + p + "\n");
+                                + entry.getKey() + " => " + formatEntry(p) + "\n");
                     }
                 }
             }

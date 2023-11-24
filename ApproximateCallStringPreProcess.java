@@ -87,7 +87,7 @@ public class ApproximateCallStringPreProcess {
                 StaticInvokeExpr invokeExpr = (StaticInvokeExpr) stmt.getInvokeExpr();
                 String functionSignature = invokeExpr.getMethod().getSubSignature();
                 String callEdgeId = String.format("%s.%s.in%02d", body.getMethod().getDeclaringClass(),
-                        invokeExpr.getMethod().getName(), getLineNumber(stmt));
+                        body.getMethod().getName(), getLineNumber(stmt));
 
                 // Process this body if not already processed.
                 if (!functionCallMap.containsKey(functionSignature)) {
