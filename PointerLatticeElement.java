@@ -89,7 +89,6 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
 
                     ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
                     ans += System.lineSeparator();
-
                 }
                 size--;
             }

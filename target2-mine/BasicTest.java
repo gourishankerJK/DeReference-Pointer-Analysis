@@ -2,7 +2,7 @@ public class BasicTest {
     BasicTest f, g;
 
     static public void f() {
-        BasicTest x = REC_TEST_2(new BasicTest());
+        BasicTest x = REC_TEST_1(new BasicTest());
         x.f = null;
         // v1.f = new BasicTest();
 
@@ -16,7 +16,7 @@ public class BasicTest {
 
     static public BasicTest rec_test(BasicTest v1) {
         BasicTest n = new BasicTest();
-        rec_test_1(v1);
+        rec_test_2(v1);
         if (n.f == v1) {
             return n.f;
         } else {
@@ -25,16 +25,16 @@ public class BasicTest {
         }
     }
 
-    static public BasicTest REC_TEST_2(BasicTest v1) {
+    static public BasicTest REC_TEST_1(BasicTest v1) {
         BasicTest n = new BasicTest();
-        rec_test_1(v1);
+        rec_test_2(v1);
         return n;
     }
 
-    static public BasicTest rec_test_1(BasicTest v1) {
+    static public BasicTest rec_test_2(BasicTest v1) {
         BasicTest x = new BasicTest();
         if (v1.f != null) return null;
-        rec_test_1(x);
+        rec_test_2(x);
         return x;
     }
 

@@ -104,9 +104,9 @@ public class Kildall {
                     currentName = pp.methodName;
                 }
 
-                String label = "[ label=\"" + s.getLatticeElement().toString() + "\"]";
+                String label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\"]";
                 if (s.isMarked()) {
-                    label = "[ label=\"" + s.getLatticeElement().toString() + "\", color=red]";
+                    label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\", color=red]";
                 }
                 fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \"" + s.methodName + " "
                         + s.getStmt() + "\"" + label
@@ -121,7 +121,9 @@ public class Kildall {
                     markred = "";    
                 } 
                 fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.methodName
-                        + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" + pp.callSuccessor.getLatticeElement() + "\", style=dotted," + markred + "]"
+                        + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" + 
+                        pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l")
+                         + "\", style=dotted," + markred + "]"
                         + System.lineSeparator());
             }
             int k = 0;
@@ -131,9 +133,9 @@ public class Kildall {
                     markred = "";
                 } 
                 fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \"" + returnPoints.methodName + " "
-                            + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\n" + returnPoints.getLatticeElement() 
-                            + "\", style=dotted" + markred+ "]"
+                            + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\", style=dotted" + markred+ "]"
                             + System.lineSeparator());
+                            // returnPoints.getLatticeElement().toString().replace("\n", "\\l") 
                 k++;
             }
         }

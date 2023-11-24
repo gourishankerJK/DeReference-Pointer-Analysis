@@ -160,7 +160,14 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     @Override
     public String toString() {
-        return this.State.toString();
+        String res = "";
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry: this.State.entrySet()) {
+            res+= entry.getKey().toString();
+            res+= " => ";
+            res += entry.getValue().toString();
+            res+= "\n\n";
+        }
+        return res;
     }
 
     @Override
