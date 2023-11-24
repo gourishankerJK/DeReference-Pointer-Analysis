@@ -242,11 +242,13 @@ public class Analysis extends PAVBase {
                             && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*")) &&
                             (p.getKey().startsWith(programPoint.methodName)
                                     || !p.getKey().contains("::") && !p.getKey().contains("@"))) {
+                        String ek = entry.getKey().size() == 1 ? entry.getKey().getfrontElement()
+                                : entry.getKey().toString();
                         ans += (baseClass + "." + programPoint.methodName + ": "
                                 + String.format("in%02d", getLineNumber(programPoint.getStmt()))
 
                                 + " "
-                                + entry.getKey() + " => " + formatEntry(p) + "\n");
+                                + ek + " => " + formatEntry(p) + "\n");
                     }
                 }
             }
