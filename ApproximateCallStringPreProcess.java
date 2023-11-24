@@ -96,7 +96,6 @@ public class ApproximateCallStringPreProcess {
                     result.addAll(newBody);
                 }
                 unitToProgramPoint.get(unit).callSuccessor = (functionCallMap.get(functionSignature));
-
                 // tagging in progress
                 unit.addTag(new CustomTag("CallerIdTag", callEdgeId));
                 unitToProgramPoint.get(unit).callEdgeId = callEdgeId;
@@ -104,21 +103,21 @@ public class ApproximateCallStringPreProcess {
                 // its successor can only be one statement.
 
                 for (Unit succ : graph.getSuccsOf(unit)) {
-                    for (ProgramPoint retSucc : functionReturnMap.get(functionSignature)) {
-                        retSucc.returnSuccessors.add(unitToProgramPoint.get(succ));
-                        retSucc.returnEdgeIds.add(callEdgeId);
-                        retSucc.getStmt().addTag(new CustomTag("returnTag", retSucc.returnEdgeIds.get(0)));
-                        System.out.println("I'm here" + retSucc.getStmt());
-                        CustomTag callersTag = (CustomTag) (retSucc.getStmt().getTag("CallersTag"));
+                    for (ProgramPoint returnProgramPoint : functionReturnMap.get(functionSignature)) {
+                        returnProgramPoint.returnSuccessors.add(unitToProgramPoint.get(succ));
+                        returnProgramPoint.returnEdgeIds.add(callEdgeId);
+                        returnProgramPoint.getStmt().addTag(new CustomTag("returnTag", returnProgramPoint.returnEdgeIds.get(0)));
+                        System.out.println("I'm here" + returnProgramPoint.getStmt());
+                        CustomTag callersTag = (CustomTag) (returnProgramPoint.getStmt().getTag("CallersTag"));
                         if (callersTag != null)
                             callersTag.UpdateMapTag(functionSignature, callEdgeId);
                         else {
                             String whereIhavetoReturnId = String.format("%s.%s.in%02d",
                                     body.getMethod().getDeclaringClass(),
-                                    invokeExpr.getMethod().getName(), getLineNumber(retSucc.getStmt()));
+                                    invokeExpr.getMethod().getName(), getLineNumber(returnProgramPoint.getStmt()));
                             CustomTag tag = new CustomTag("CallersTag", whereIhavetoReturnId, callEdgeId);
                         
-                            retSucc.getStmt().addTag(tag);
+                            returnProgramPoint.getStmt().addTag(tag);
 
                         }
                     }

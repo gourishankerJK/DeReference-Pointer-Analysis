@@ -18,7 +18,7 @@ public class FixedSizeStack<T> implements Cloneable {
 
     public void pushBack(T item) {
         if (stack.size() == size) {
-            stack.pollLast();
+            stack.pollFirst();
         }
         stack.offerLast(item);
     }

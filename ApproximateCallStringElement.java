@@ -122,6 +122,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         StaticInvokeExpr stExpr = (StaticInvokeExpr) st.getInvokeExpr();
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         int i = 0;
+        // Extend state with parameters to handle them separately within the function
         for (Value arg : stExpr.getArgs()) {
             if (isReferenceType(arg.getType())) {
                 for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
@@ -138,7 +139,6 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             }
             i++;
         }
-        // System.out.println(curState);
 
         return new ApproximateCallStringElement(curState);
     }

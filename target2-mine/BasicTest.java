@@ -33,6 +33,7 @@ public class BasicTest {
 
     static public BasicTest rec_test_1(BasicTest v1) {
         BasicTest x = new BasicTest();
+        if (v1.f != null) return null;
         rec_test_1(x);
         return x;
     }

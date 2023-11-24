@@ -10,5 +10,11 @@ set -e
 
 
 # XXX you can add / delete / comment / uncomment lines below
-./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "f"
+mkdir -p iterations
+./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "REC_TEST_2"
 dot -Tpng callgraph.dot -o callgraph.png
+
+find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
+    echo "Processing: $file"
+    dot -Tpng "$file" -o "$file.png"
+done
