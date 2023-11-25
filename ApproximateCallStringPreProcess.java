@@ -12,6 +12,7 @@ import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JReturnStmt;
 import soot.jimple.internal.JReturnVoidStmt;
 import soot.toolkits.graph.ExceptionalUnitGraph;
@@ -21,6 +22,9 @@ public class ApproximateCallStringPreProcess {
     private HashSet<String> visited = new HashSet<>();
     private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
+
+    // A map to handle assignments for the return edges.
+    public static Map<Integer, String> returnVariableMap = new HashMap<>();
 
     public List<String> gatherVariablesList(Body body) {
         renameVariable(body);
@@ -100,25 +104,14 @@ public class ApproximateCallStringPreProcess {
                 unit.addTag(new CustomTag("CallerIdTag", callEdgeId));
                 unitToProgramPoint.get(unit).callEdgeId = callEdgeId;
                 // Here assumption is that from one statement there can only be one call, and
-                // its successor can only be one statement.
-
+                // its successor can only be one statement, meaning this for loop will EXECUTE ONLY 1 TIME.
                 for (Unit succ : graph.getSuccsOf(unit)) {
                     for (ProgramPoint returnProgramPoint : functionReturnMap.get(functionSignature)) {
                         returnProgramPoint.returnSuccessors.add(unitToProgramPoint.get(succ));
                         returnProgramPoint.returnEdgeIds.add(callEdgeId);
-                        returnProgramPoint.getStmt().addTag(new CustomTag("returnTag", returnProgramPoint.returnEdgeIds.get(0)));
-                        System.out.println("I'm here" + returnProgramPoint.getStmt());
-                        CustomTag callersTag = (CustomTag) (returnProgramPoint.getStmt().getTag("CallersTag"));
-                        if (callersTag != null)
-                            callersTag.UpdateMapTag(functionSignature, callEdgeId);
-                        else {
-                            String whereIhavetoReturnId = String.format("%s.%s.in%02d",
-                                    body.getMethod().getDeclaringClass(),
-                                    invokeExpr.getMethod().getName(), getLineNumber(returnProgramPoint.getStmt()));
-                            CustomTag tag = new CustomTag("CallersTag", whereIhavetoReturnId, callEdgeId);
-                        
-                            returnProgramPoint.getStmt().addTag(tag);
-
+                        if (returnProgramPoint.getStmt() instanceof JReturnStmt && unit instanceof JAssignStmt) {
+                            String lhs = ((JAssignStmt) unit).getLeftOp().toString();
+                            returnVariableMap.put(returnProgramPoint.getStmt().hashCode(), lhs);
                         }
                     }
                 }

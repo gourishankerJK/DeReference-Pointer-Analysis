@@ -110,7 +110,7 @@ public class Analysis extends PAVBase {
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
 
             List<String> output = formatResult(result.get(0), targetDirectory, tClass, tMethod);
-            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, output);
+            // writeResultToFile(0, targetDirectory, tClass, tMethod, mode, output);
             System.out.println("Final output written in "
                     + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
             for (int i = 1; i < result.size(); i++) {

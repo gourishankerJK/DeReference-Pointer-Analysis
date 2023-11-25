@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,28 +87,40 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     private LatticeElement handleReturnFn(Stmt st, String returnEdge) {
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
-        Map<FixedSizeStack<String>, PointerLatticeElement> facts = new HashMap<>();
 
+        // Input will be facts of this current state
+        // Statement is the effect we want to return
+
+        // need return edge to compare the last element
+        // need variable corresponding to this edge.
+        Map<FixedSizeStack<String>, PointerLatticeElement> output = new HashMap<>();
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
             FixedSizeStack<String> callString = entry.getKey().clone();
-            PointerLatticeElement value = entry.getValue().clone();
-            if (callString.size() != 0 && returnEdge.equals(callString.popBack())) {
-                List<String> callers = getCallers(st, callString.getfrontElement());
-                // remove @parameter.*
-                value = value.removeFromState();
-                // caller is main itself ...
-                if (callers.size() == 0) {
-                    facts.put(callString, value);
-                } else {
-                    for (String s : callers) {
-                        FixedSizeStack<String> newKey = callString.clone();
-                        newKey.pushFront(s);
-                        facts.put(callString, value);
+            PointerLatticeElement element = entry.getValue().clone();
+            if (st instanceof JReturnStmt) {
+                JReturnStmt retStmt = (JReturnStmt) st;
+                String retOp = retStmt.getOp().toString();
+
+                Map<String, HashSet<String>> newstate = element.getState();
+                String varToBeMapped = ApproximateCallStringPreProcess.returnVariableMap.get(st.hashCode());
+                if (varToBeMapped != null ) {
+                    // handle for null statement
+                    if (retOp != "null") {
+                        newstate.put(varToBeMapped, element.getState().get(retOp));
+                    } else {
+                        newstate.put(varToBeMapped, new HashSet<String>(Arrays.asList("null")));
                     }
                 }
+                element = new PointerLatticeElement(newstate);
+            }
+            if (callString.getlastElement() == returnEdge) {
+                callString.popBack();
+                output.put(callString, element);
+                System.out.println("RETURN UPDATE: " + element);
             }
         }
-        return new ApproximateCallStringElement(facts);
+
+        return new ApproximateCallStringElement(output);
     }
 
     private LatticeElement handleNormalAssignFn(Stmt st) {

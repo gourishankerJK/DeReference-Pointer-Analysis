@@ -26,38 +26,28 @@ public class Kildall {
         analysisPoint.setMarkPoint(false);
         List<ProgramPoint> logFact = new ArrayList<>();
         if (analysisPoint.callEdgeId != null) {
+            // Call site
             ProgramPoint successor = analysisPoint.callSuccessor;
             LatticeElement joinElement = successor.getLatticeElement()
                     .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
-            if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
+            markOrUnmarkProgramPoint(successor, joinElement);
 
-                successor.setMarkPoint(false);
-            } else {
-                successor.setMarkPoint(true);
-                successor.setLatticeElement(joinElement);
-            }
-            // if the analysis point is a return point
+        } else if (analysisPoint.returnSuccessors.size() != 0) {
+                        // if the analysis point is a return point
             // Case 1: The successor had a call site that was a normal invoke
             //      In this case there is nothing to update for the caller function
             // Case 2: The successor had a call site that has an assignment
             //      In this case we need to perform strong update.
-        } else if (analysisPoint.returnSuccessors.size() != 0) {
             int index = 0;
             for (ProgramPoint successor : analysisPoint.returnSuccessors) {
                 LatticeElement joinElement = successor.getLatticeElement()
                         .join_op(analysisPoint.getLatticeElement().tf_returnstmt(analysisPoint.returnEdgeIds.get(index),
                                 analysisPoint.getStmt()));
                 index++;
-                if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
-
-                    successor.setMarkPoint(false);
-                } else {
-                    successor.setMarkPoint(true);
-                    successor.setLatticeElement(joinElement);
-                }
+                markOrUnmarkProgramPoint(successor, joinElement);
             }
         } else {
-
+            // non-call or return program points
             for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
                 LatticeElement joinElement;
 
@@ -70,18 +60,22 @@ public class Kildall {
                 }
                 // Unmark the successor nodes based on the previous value
 
-                if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
-
-                    successor.setMarkPoint(false);
-                } else {
-                    successor.setMarkPoint(true);
-                    successor.setLatticeElement(joinElement);
-                }
+                markOrUnmarkProgramPoint(successor, joinElement);
                 i++;
                 logFact.add(new ProgramPoint(successor.getLatticeElement(), successor.getStmt(), successor.isMarked()));
             }
         }
         logFactLists.add(logFact);
+    }
+
+    private static void markOrUnmarkProgramPoint(ProgramPoint successor, LatticeElement joinElement) {
+        if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
+
+            successor.setMarkPoint(false);
+        } else {
+            successor.setMarkPoint(true);
+            successor.setLatticeElement(joinElement);
+        }
     }
 
 
@@ -103,7 +97,7 @@ public class Kildall {
                                     + System.lineSeparator());
                     currentName = pp.methodName;
                 }
-
+                
                 String label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\"]";
                 if (s.isMarked()) {
                     label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\", color=red]";
