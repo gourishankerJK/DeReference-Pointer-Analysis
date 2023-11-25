@@ -1,9 +1,7 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import soot.RefType;
 import soot.Type;
 import soot.Value;
@@ -11,40 +9,38 @@ import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JReturnStmt;
 import soot.jimple.internal.JReturnVoidStmt;
-import soot.tagkit.StringTag;
-import soot.tagkit.Tag;
+import utils.CustomTag;
+import utils.FixedSizeStack;
 
-public class ApproximateCallStringElement implements LatticeElement {
-    Map<Stack<String>, PointerLatticeElement> State;
+public class ApproximateCallStringElement implements LatticeElement, Cloneable {
+    Map<FixedSizeStack<String>, PointerLatticeElement> State;
 
-    public ApproximateCallStringElement(Map<Stack<String>, PointerLatticeElement> originalState) {
-        Map<Stack<String>, PointerLatticeElement> temp = new HashMap<>();
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : originalState.entrySet()) {
-            Stack<String> stack = new Stack<>();
-            stack.addAll(entry.getKey());
-            temp.put(stack, new PointerLatticeElement(entry.getValue().getState()));
+    public ApproximateCallStringElement(Map<FixedSizeStack<String>, PointerLatticeElement> originalState) {
+        Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : originalState.entrySet()) {
+            temp.put(entry.getKey().clone(), entry.getValue().clone());
         }
         this.State = temp;
     }
 
-    public ApproximateCallStringElement(List<String> variables) {
-        Map<Stack<String>, PointerLatticeElement> temp = new HashMap<>();
-        Stack<String> stack = new Stack<>();
-        stack.add("@");
+    public ApproximateCallStringElement(List<String> variables, boolean mainFunction) {
+        Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
+        FixedSizeStack<String> stack = new FixedSizeStack<>();
+        if (mainFunction)
+            stack.pushBack("@");
         temp.put(stack, new PointerLatticeElement(variables));
         this.State = temp;
     }
 
     @Override
     public LatticeElement join_op(LatticeElement r) {
-        ApproximateCallStringElement element = (ApproximateCallStringElement) r;
-        ApproximateCallStringElement currentState = new ApproximateCallStringElement(this.State);
-        ApproximateCallStringElement incomingState = new ApproximateCallStringElement(element.State);
-        System.out.println("-->" + currentState);
-        System.out.println("-->" + incomingState);
-        Map<Stack<String>, PointerLatticeElement> joinedState = new HashMap<>();
+        ApproximateCallStringElement currentState = this.clone();
+        ApproximateCallStringElement incomingState = ((ApproximateCallStringElement) r).clone();
+        Map<FixedSizeStack<String>, PointerLatticeElement> joinedState = new HashMap<>();
 
-        for (Stack<String> key : currentState.State.keySet()) {
+        for (FixedSizeStack<String> key : currentState.State.keySet()) {
+            if (key.size() == 0)
+                continue;
             if (!incomingState.State.containsKey(key)) {
                 joinedState.put(key, currentState.State.get(key));
             } else {
@@ -55,30 +51,25 @@ public class ApproximateCallStringElement implements LatticeElement {
             }
         }
 
-        for (Stack<String> key : incomingState.State.keySet()) {
+        for (FixedSizeStack<String> key : incomingState.State.keySet()) {
+            if (key.size() == 0)
+                continue;
             if (!currentState.State.containsKey(key)) {
                 joinedState.put(key, incomingState.State.get(key));
             }
         }
-        System.out.println("--->" + joinedState);
         return new ApproximateCallStringElement(joinedState);
     }
 
-    public Map<Stack<String>, PointerLatticeElement> getState() {
-        Map<Stack<String>, PointerLatticeElement> temp = new HashMap<>();
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
-            Stack<String> stack = new Stack<>();
-            stack.addAll(entry.getKey());
-            temp.put(stack, new PointerLatticeElement(entry.getValue().getState()));
-        }
-        return temp;
+    public Map<FixedSizeStack<String>, PointerLatticeElement> getState() {
+        return this.clone().State;
     }
 
     @Override
     public boolean equals(LatticeElement r) {
         ApproximateCallStringElement element = (ApproximateCallStringElement) r;
         boolean flag = true;
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
             flag = element.State.getOrDefault(entry.getKey(), new PointerLatticeElement()).equals(entry.getValue());
         }
         return flag;
@@ -98,26 +89,39 @@ public class ApproximateCallStringElement implements LatticeElement {
 
     private LatticeElement handleReturnFn(Stmt st) {
 
-        Map<Stack<String>, PointerLatticeElement> curState = this.getState();
-        Map<Stack<String>, PointerLatticeElement> facts = new HashMap<>();
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : curState.entrySet()) {
-            Stack<String> key = entry.getKey();
-            key.pop();
-            for (String s : getCallers(st, key.firstElement())) {
-                Stack<String> newKey = new Stack<String>();
-                newKey.add(s);
-                newKey.addAll(key);
-                facts.put(key, entry.getValue());
+        Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
+        Map<FixedSizeStack<String>, PointerLatticeElement> facts = new HashMap<>();
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+            FixedSizeStack<String> key = entry.getKey();
+            PointerLatticeElement value = entry.getValue().clone();
+            key.popBack();
+            if (key.size() == 0) {
+                curState.remove(key);
+            } else {
+                List<String> callers = getCallers(st, key.getfrontElement());
+
+                // remove @parameter.*
+                value = value.removeFromState();
+                // caller is main itself ...
+                if (callers.size() == 0) {
+                    facts.put(key, value);
+                } else {
+                    for (String s : callers) {
+                        FixedSizeStack<String> newKey = key.clone();
+                        newKey.pushFront(s);
+                        facts.put(key, value);
+                    }
+                }
             }
         }
+        System.out.println("facts" + facts);
         return new ApproximateCallStringElement(facts);
     }
 
     private LatticeElement handleNormalAssignFn(Stmt st) {
-        Map<Stack<String>, PointerLatticeElement> temp = new HashMap<>();
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
-            Stack<String> stack = new Stack<>();
-            stack.addAll(entry.getKey());
+        Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+            FixedSizeStack<String> stack = entry.getKey().clone();
             temp.put(stack, (PointerLatticeElement) entry.getValue().tf_assignstmt(st));
         }
         return new ApproximateCallStringElement(temp);
@@ -125,20 +129,18 @@ public class ApproximateCallStringElement implements LatticeElement {
 
     private LatticeElement handleCallTransferFn(Stmt st) {
         StaticInvokeExpr stExpr = (StaticInvokeExpr) st.getInvokeExpr();
-        Map<Stack<String>, PointerLatticeElement> curState = this.getState();
+        Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         int i = 0;
         for (Value arg : stExpr.getArgs()) {
             if (isReferenceType(arg.getType())) {
-                for (Map.Entry<Stack<String>, PointerLatticeElement> entry : curState.entrySet()) {
-                    System.out.println();
+                for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
+
                     HashSet<String> temp = new HashSet<>();
                     PointerLatticeElement p = entry.getValue();
                     temp.addAll(p.getState().get(arg.toString()));
                     PointerLatticeElement exntedPointerLatticeElement = entry.getValue()
                             .addToState("@parameter" + i + ": " + arg.getType(), temp);
-
-                    entry.getKey().push(getCallId(st));
-
+                    entry.getKey().pushBack(getCallId(st));
                     entry.setValue(exntedPointerLatticeElement);
 
                 }
@@ -150,10 +152,9 @@ public class ApproximateCallStringElement implements LatticeElement {
 
     @Override
     public LatticeElement tf_condstmt(boolean b, Stmt st) {
-        Map<Stack<String>, PointerLatticeElement> temp = new HashMap<>();
-        for (Map.Entry<Stack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
-            Stack<String> stack = new Stack<>();
-            stack.addAll(entry.getKey());
+        Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+            FixedSizeStack<String> stack = entry.getKey().clone();
             temp.put(stack, (PointerLatticeElement) entry.getValue().tf_condstmt(b, st));
         }
         return new ApproximateCallStringElement(temp);
@@ -163,32 +164,36 @@ public class ApproximateCallStringElement implements LatticeElement {
         return type instanceof RefType;
     }
 
-    private String getCallId(Stmt st) {
-        List<Tag> tags = st.getTags();
-        for (Tag tag : tags) {
-            if (tag instanceof StringTag) {
-                return tag.toString();
-            }
-        }
-        return "";
-    }
-
     @Override
     public String toString() {
         return this.State.toString();
     }
 
-    private List<String> getCallers(Stmt st, String value) {
-        List<Tag> tags = st.getTags();
-        List<String> ans = new ArrayList<>();
-        for (Tag tag : tags) {
-            if (tag instanceof HashMapTag) {
-                HashMapTag tagged = (HashMapTag) tag;
-                System.out.println("ALL CALLERS for " + value + "  " + tagged.getTag(value));
-                return tagged.getTag(value);
+    @Override
+    public ApproximateCallStringElement clone() {
+        try {
+            ApproximateCallStringElement clonedElement = (ApproximateCallStringElement) super.clone();
+            clonedElement.State = new HashMap<>(this.State.size());
+            for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+                FixedSizeStack<String> clonedKey = entry.getKey().clone();
+                PointerLatticeElement clonedValue = entry.getValue().clone();
+                clonedElement.State.put(clonedKey, clonedValue);
             }
+            return clonedElement;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
         }
-        return ans;
+    }
+
+    private String getCallId(Stmt st) {
+        CustomTag tag = (CustomTag) st.getTag("CallerIdTag");
+        return tag.getStringTag();
+    }
+
+    private List<String> getCallers(Stmt st, String value) {
+        CustomTag t = (CustomTag) st.getTag("CallersTag");
+        return t.getHashMapTag(value);
     }
 
 }

@@ -2,26 +2,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import soot.Body;
 import soot.Local;
 import soot.RefType;
-import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
-import soot.jimple.internal.JAssignStmt;
-import soot.jimple.internal.JIdentityStmt;
 import soot.jimple.internal.JReturnStmt;
 import soot.jimple.internal.JReturnVoidStmt;
-import soot.jimple.toolkits.scalar.LocalNameStandardizer;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.StringTag;
-import soot.tagkit.Tag;
 import soot.toolkits.graph.ExceptionalUnitGraph;
+import utils.CustomTag;
 
 public class ApproximateCallStringPreProcess {
 
@@ -45,7 +38,7 @@ public class ApproximateCallStringPreProcess {
         return variables;
     }
 
-    public List<ProgramPoint> PreProcess(Body body, List<String> variables) {
+    public List<ProgramPoint> PreProcess(Body body, String mainFunction, List<String> variables) {
 
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
         HashMap<Unit, ProgramPoint> unitToProgramPoint = new HashMap<>();
@@ -54,8 +47,12 @@ public class ApproximateCallStringPreProcess {
         // Initial pass to create list of program points, this loop is needed to track
         // the line numbers
         for (Unit unit : body.getUnits()) {
-            unit.addTag(new LineNumberTag(lineno++));
-            ProgramPoint programPoint = new ProgramPoint(new ApproximateCallStringElement(variables), (Stmt) unit,
+            unit.addTag(new CustomTag("lineNumberTag", lineno++));
+            unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
+            unit.addTag(new CustomTag("functionName", body.getMethod().getName()));
+            ProgramPoint programPoint = new ProgramPoint(
+                    new ApproximateCallStringElement(variables, body.getMethod().getName().equals(mainFunction)),
+                    (Stmt) unit,
                     true);
 
             programPoint.methodName = body.getMethod().getSubSignature();
@@ -91,32 +88,33 @@ public class ApproximateCallStringPreProcess {
 
                 // Process this body if not already processed.
                 if (!functionCallMap.containsKey(functionSignature)) {
-                    List<ProgramPoint> newBody = PreProcess(invokeExpr.getMethod().retrieveActiveBody(), variables);
+                    List<ProgramPoint> newBody = PreProcess(invokeExpr.getMethod().retrieveActiveBody(), mainFunction,
+                            variables);
                     result.addAll(newBody);
                 }
                 unitToProgramPoint.get(unit).callSuccessor = (functionCallMap.get(functionSignature));
 
                 // tagging in progress
-                unit.addTag(new StringTag(callEdgeId));
+                unit.addTag(new CustomTag("CallerIdTag", callEdgeId));
                 unitToProgramPoint.get(unit).callEdgeId = callEdgeId;
                 // Here assumption is that from one statement there can only be one call, and
                 // its successor can only be one statement.
 
                 for (Unit succ : graph.getSuccsOf(unit)) {
                     for (ProgramPoint retSucc : functionReturnMap.get(functionSignature)) {
-                        boolean tagged_done = false;
                         retSucc.returnSuccessors.add(unitToProgramPoint.get(succ));
                         retSucc.returnEdgeIds.add(callEdgeId);
-
-                        for (Tag tag : retSucc.getStmt().getTags()) {
-                            if (tag instanceof HashMapTag) {
-                                tagged_done = false;
-                                HashMapTag tagged = (HashMapTag) tag;
-                                tagged.UpdateMapTag(functionSignature, callEdgeId);
-                            }
-                        }
-                        if (!tagged_done) {
-                            retSucc.getStmt().addTag(new HashMapTag(functionSignature, callEdgeId));
+                        CustomTag callersTag = (CustomTag) (retSucc.getStmt().getTag("CallersTag"));
+                        if (callersTag != null)
+                            callersTag.UpdateMapTag(functionSignature, callEdgeId);
+                        else {
+                            String whereIhavetoReturnId = String.format("%s.%s.in%02d",
+                                    body.getMethod().getDeclaringClass(),
+                                    invokeExpr.getMethod().getName(), getLineNumber(retSucc.getStmt()));
+                            System.out.println(whereIhavetoReturnId);
+                            CustomTag tag = new CustomTag("CallersTag", whereIhavetoReturnId, callEdgeId);
+                            retSucc.getStmt().addTag(tag);
+                            System.out.println("Heoldfsdafod" + retSucc.getStmt().getTags());
                         }
                     }
                 }
@@ -137,14 +135,7 @@ public class ApproximateCallStringPreProcess {
     }
 
     private static int getLineNumber(Stmt st) {
-        List<Tag> tags = st.getTags();
-        int lineno = 0;
-        for (Tag t : tags) {
-            if (t instanceof LineNumberTag) {
-                lineno = Integer.parseInt(t.toString());
-            }
-        }
-        return lineno;
+        return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
     public static void renameVariable(Body body) {

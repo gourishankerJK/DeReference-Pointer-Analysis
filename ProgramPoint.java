@@ -34,7 +34,6 @@ public class ProgramPoint {
     public void setLatticeElement(LatticeElement latticeElement) {
         ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
         ApproximateCallStringElement l = new ApproximateCallStringElement(s.getState());
-        System.out.println("Set: "+ l);
         this.latticeElement = l;
     }
 

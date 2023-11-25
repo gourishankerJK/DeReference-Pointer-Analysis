@@ -15,8 +15,6 @@ import java.util.*;
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.Tag;
 import soot.Unit;
 import soot.Scene;
 import soot.Body;
@@ -29,6 +27,8 @@ import soot.NormalUnitPrinter;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.util.cfgcmd.CFGToDotGraph;
 import soot.util.dot.DotGraph;
+import utils.CustomTag;
+import utils.FixedSizeStack;
 
 public class Analysis extends PAVBase {
 
@@ -83,7 +83,7 @@ public class Analysis extends PAVBase {
         System.out.println("tclass: " + targetClass);
         System.out.println("tmethod: " + targetMethod);
         System.out.println("tmethodname: " + tMethod);
-        Iterator mi = targetClass.getMethods().iterator();
+        Iterator<SootMethod> mi = targetClass.getMethods().iterator();
         while (mi.hasNext()) {
             SootMethod sm = (SootMethod) mi.next();
             // System.out.println("method: " + sm);
@@ -94,7 +94,7 @@ public class Analysis extends PAVBase {
         }
 
         if (methodFound) {
-
+            printInfo(targetMethod);
             /*************************************************************
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
@@ -103,8 +103,9 @@ public class Analysis extends PAVBase {
             ApproximateCallStringPreProcess preProcess = new ApproximateCallStringPreProcess();
             List<String> variables = preProcess.gatherVariablesList(targetMethod.retrieveActiveBody());
             preProcess = new ApproximateCallStringPreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody() , variables);
-            printInfo(targetMethod);
+            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody(),
+                    targetMethod.getName(), variables);
+
             MakeInterProceduralGraph(preProcessedBody);
 
             // Compute Least fix point using Kildall's algorithms
@@ -207,21 +208,14 @@ public class Analysis extends PAVBase {
     }
 
     private static int getLineNumber(Stmt st) {
-        List<Tag> tags = st.getTags();
-        int lineno = 0;
-        for (Tag t : tags) {
-            if (t instanceof LineNumberTag) {
-                lineno = Integer.parseInt(t.toString());
-            }
-        }
-        return lineno;
+        return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
     private static void printResult(List<ProgramPoint> result) {
         for (ProgramPoint programPoint : result) {
-            Map<Stack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
+            Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
-            for (Map.Entry<Stack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+            for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     if (p.getValue().size() != 0)
                         System.out
@@ -236,9 +230,9 @@ public class Analysis extends PAVBase {
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
         Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
         for (ProgramPoint programPoint : result) {
-            Map<Stack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
+            Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
-            for (Map.Entry<Stack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+            for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     String lineNumber = programPoint.getStmt().getTags()
                             .get(programPoint.getStmt().getTags().size() - 1).toString();
