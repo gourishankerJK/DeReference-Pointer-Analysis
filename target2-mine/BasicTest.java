@@ -1,14 +1,13 @@
 public class BasicTest {
     BasicTest f, g;
 
-    static public BasicTest f() {
-        
-        g(new BasicTest() , 1, new BasicTest() , 0);
-        return new BasicTest();
+    static public void f() {
+        g(new BasicTest());
     }
 
-    static public BasicTest g() {
-         f();
+    static public BasicTest g(BasicTest  v1) {
+        v1.f = new BasicTest();
+        v1 = new BasicTest();
         return new BasicTest();
     }
     static public BasicTest g(BasicTest v1 ,int j, BasicTest v2 , int i) {
@@ -48,7 +47,7 @@ public class BasicTest {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
-      g();
+      g(v1);
     }
 
     public static void conditional_check() {

@@ -4,17 +4,22 @@ import soot.RefType;
 import soot.Type;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.Constant;
 import soot.jimple.EqExpr;
 import soot.jimple.IfStmt;
+import soot.jimple.InvokeExpr;
 import soot.jimple.NeExpr;
 import soot.jimple.NullConstant;
+import soot.jimple.ParameterRef;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
+import soot.jimple.internal.JIdentityStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JStaticInvokeExpr;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
+import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
 
 import java.util.Arrays;
@@ -41,28 +46,37 @@ public class PointerLatticeElement implements LatticeElement {
         TreeMap<String, HashSet<String>> newState = new TreeMap<String, HashSet<String>>();
         for (String key : state.keySet()) {
             HashSet<String> value = new HashSet<String>();
-            value.addAll(new HashSet<>(state.get(key)));
+            if (state.get(key) != null)
+                value.addAll(new HashSet<>(state.get(key)));
             newState.put(key, value);
         }
         this.State = newState;
     }
 
     public Map<String, HashSet<String>> getState() {
-
         return new PointerLatticeElement(this.State).State;
     }
 
-    public void printState() {
+    @Override
+    public String toString() {
+        String ans = "{";
         for (String key : this.State.keySet()) {
-            System.out.print(key + " :");
-            System.out.println(this.State.get(key).toString());
+            ans += key + " -> ";
+            ans += this.State.get(key).toString() + ", ";
         }
-        System.out.println();
+
+        return ans + "}";
     }
 
     public static String getAllocationSiteSymbol(Stmt st) {
         List<Tag> tags = st.getTags();
-        return String.format("new%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
+        int lineno = 0;
+        for (Tag t : tags) {
+            if (t instanceof LineNumberTag) {
+                lineno = Integer.parseInt(t.toString());
+            }
+        }
+        return String.format("new%02d", lineno);
     }
 
     @Override
@@ -93,25 +107,26 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public boolean equals(LatticeElement r) {
-
-        HashSet<String> temp = new HashSet<String>();
-        Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-        for (String key : input.keySet()) {
-            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-                return false;
-        }
-        for (String key : this.State.keySet()) {
-            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-                return false;
-        }
-        return true;
+        return this.State.equals(((PointerLatticeElement) r).State);
     }
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
         LatticeElement result = new PointerLatticeElement(State);
+        if (st instanceof JIdentityStmt) {
+            JIdentityStmt Jst = (JIdentityStmt) st;
+            Value right = Jst.getRightOp();
+            Value left = Jst.getLeftOp();
+            System.out.println(right + " | | " + this.State);
+            HashSet<String> pointingTo = this.State.getOrDefault(right.toString(), new HashSet<>());
+            System.out.println(pointingTo);
 
-        if (st instanceof JAssignStmt) {
+            for (String points : pointingTo) {
+
+                this.State.put(left.toString(), this.State.get(points));
+            }
+
+        } else if (st instanceof JAssignStmt) {
             return tfAssignmentStmt((AssignStmt) st);
         }
 
@@ -176,6 +191,7 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleFieldAssignmentForLocal(PointerLatticeElement result, Value lhs, Value rhs) {
         HashSet<String> res = new HashSet<>();
         JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+
         for (String pseudoVar : result.State.get(r.getBase().toString())) {
             String key = getSymbolicFieldKey(pseudoVar, r);
             if (pseudoVar == "null" || !result.State.containsKey(key)) {
@@ -201,6 +217,7 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+        System.out.println("Error " + st);
         for (String pseudoVar : result.State.get(l.getBase().toString())) {
             if (pseudoVar == "null") {
                 continue;
@@ -260,6 +277,12 @@ public class PointerLatticeElement implements LatticeElement {
      * @param result PointerLatticeElement whose state needs to be cleared
      * @return Cleared PointerLatticeElement
      */
+    public PointerLatticeElement addToState(String value, HashSet<String> parameter) {
+        Map<String, HashSet<String>> st = getState();
+        st.put(value, parameter);
+        return new PointerLatticeElement(st);
+    }
+
     private PointerLatticeElement clearState(PointerLatticeElement result) {
         for (String key : this.State.keySet()) {
             result.State.get(key).clear();

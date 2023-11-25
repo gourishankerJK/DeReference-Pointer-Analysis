@@ -15,6 +15,7 @@ import java.util.*;
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
+import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
 import soot.Unit;
 import soot.Scene;
@@ -93,29 +94,33 @@ public class Analysis extends PAVBase {
         }
 
         if (methodFound) {
-            printInfo(targetMethod);
+
             /*************************************************************
              * XXX This would be a good place to call the function
              * which performs the Kildalls iterations over the LatticeElement.
              *************************************************************/
             // Preprocess for the pointer lattice element
-            IPreProcess preProcess = new ApproximateCallStringPreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
-
+            ApproximateCallStringPreProcess preProcess = new ApproximateCallStringPreProcess();
+            List<String> variables = preProcess.gatherVariablesList(targetMethod.retrieveActiveBody());
+            preProcess = new ApproximateCallStringPreProcess();
+            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody() , variables);
+            printInfo(targetMethod);
             MakeInterProceduralGraph(preProcessedBody);
 
             // Compute Least fix point using Kildall's algorithms
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
-            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
-            System.out.println("Final output written in "
-                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
-            for (int i = 1; i < result.size(); i++) {
-                writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
-            }
-            writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
-            System.out.println("Logs of kildall written in "
-                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
+            // writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
+            // System.out.println("Final output written in "
+            // + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
+            // for (int i = 1; i < result.size(); i++) {
+            // writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
+            // }
+            // writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
+            // System.out.println("Logs of kildall written in "
+            // + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
+            // tMethod));
+            printResult(result.get(0));
 
             drawMethodDependenceGraph(targetMethod);
         } else {
@@ -127,9 +132,9 @@ public class Analysis extends PAVBase {
 
         FileWriter fileWriter = new FileWriter(String.format("./callgraph.dot"));
         int j = 0;
-          Random random = new Random();
+        Random random = new Random();
         fileWriter.write("digraph G {bgcolor=\"lightblue\" node [shape=\"Mrectangle\"]" + System.lineSeparator());
-        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator() + "bgcolor= grey" );
+        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator() + "bgcolor= grey");
         String[] bgColors = {
                 "red",
                 "green",
@@ -147,7 +152,7 @@ public class Analysis extends PAVBase {
                 if (pp.methodName != currentName) {
                     int index = random.nextInt(bgColors.length);
                     fileWriter.write(
-                             "}" + "subgraph cluster_" + j++ + " {"
+                            "}" + "subgraph cluster_" + j++ + " {"
                                     + System.lineSeparator() + "bgcolor=" + bgColors[index]);
                     currentName = pp.methodName;
                 }
@@ -201,21 +206,61 @@ public class Analysis extends PAVBase {
         }
     }
 
+    private static int getLineNumber(Stmt st) {
+        List<Tag> tags = st.getTags();
+        int lineno = 0;
+        for (Tag t : tags) {
+            if (t instanceof LineNumberTag) {
+                lineno = Integer.parseInt(t.toString());
+            }
+        }
+        return lineno;
+    }
+
+    private static void printResult(List<ProgramPoint> result) {
+        for (ProgramPoint programPoint : result) {
+            Map<Stack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
+                    .getLatticeElement()).getState();
+            for (Map.Entry<Stack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+                for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
+                    if (p.getValue().size() != 0)
+                        System.out
+                                .println(" " + programPoint.methodName + ": in" + getLineNumber(programPoint.getStmt())
+                                        + " "
+                                        + entry.getKey() + " => " + p);
+                }
+            }
+        }
+    }
+
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
         Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
         for (ProgramPoint programPoint : result) {
-            Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.getLatticeElement()).getState();
-            for (String key : state.keySet()) {
-                if (state.get(key).size() == 0)
-                    continue;
-
-                List<String> varList = new ArrayList<String>(state.get(key));
-                Collections.sort(varList);
-                List<Tag> tags = programPoint.getStmt().getTags();
-                ResultTuple tuple = new ResultTuple(method,
-                        String.format("in%02d", Integer.parseInt(tags.get(tags.size() - 1).toString())), key, varList);
-                resultFormatted.add(tuple);
+            Map<Stack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
+                    .getLatticeElement()).getState();
+            for (Map.Entry<Stack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+                for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
+                    String lineNumber = programPoint.getStmt().getTags()
+                            .get(programPoint.getStmt().getTags().size() - 1).toString();
+                    if (p.getValue().size() != 0)
+                        System.out
+                                .println(programPoint.methodName + ": in" + lineNumber
+                                        + " "
+                                        + entry.getKey() + " => " + p);
+                }
             }
+            // for (String key : state.keySet()) {
+            // if (state.get(key).size() == 0)
+            // continue;
+
+            // List<String> varList = new ArrayList<String>(state.get(key));
+            // Collections.sort(varList);
+            // List<Tag> tags = programPoint.getStmt().getTags();
+            // ResultTuple tuple = new ResultTuple(method,
+            // String.format("in%02d", Integer.parseInt(tags.get(tags.size() -
+            // 1).toString())), key, varList);
+            // resultFormatted.add(tuple);
+            // }
         }
 
         return resultFormatted;

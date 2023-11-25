@@ -14,7 +14,7 @@ public class ProgramPoint {
     public ProgramPoint callSuccessor;
     public String methodName;
     public String callEdgeId;
-	public List<ProgramPoint> returnSuccessors;
+    public List<ProgramPoint> returnSuccessors;
     public List<String> returnEdgeIds;
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
@@ -34,6 +34,7 @@ public class ProgramPoint {
     public void setLatticeElement(LatticeElement latticeElement) {
         ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
         ApproximateCallStringElement l = new ApproximateCallStringElement(s.getState());
+        System.out.println("Set: "+ l);
         this.latticeElement = l;
     }
 
@@ -46,7 +47,18 @@ public class ProgramPoint {
     }
 
     public List<ProgramPoint> getSuccessors() {
-        return successors;
+        List<ProgramPoint> ls = new ArrayList<>();
+        ls.addAll(successors);
+        return ls;
+    }
+
+    public List<ProgramPoint> getAllSuccessors() {
+        List<ProgramPoint> ls = new ArrayList<>();
+        ls.addAll(successors);
+        ls.addAll(returnSuccessors);
+        if (callSuccessor != null)
+            ls.add(callSuccessor);
+        return ls;
     }
 
     public void setSuccessors(List<ProgramPoint> s) {
