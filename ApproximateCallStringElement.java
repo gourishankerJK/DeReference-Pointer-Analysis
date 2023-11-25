@@ -9,7 +9,6 @@ import soot.Value;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JReturnStmt;
-import soot.jimple.internal.JReturnVoidStmt;
 import utils.CustomTag;
 import utils.FixedSizeStack;
 
