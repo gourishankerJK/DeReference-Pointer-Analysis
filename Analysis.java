@@ -102,7 +102,6 @@ public class Analysis extends PAVBase {
             // Preprocess for the pointer lattice element
             ApproximateCallStringPreProcess preProcess = new ApproximateCallStringPreProcess();
             List<String> variables = preProcess.gatherVariablesList(targetMethod.retrieveActiveBody());
-            preProcess = new ApproximateCallStringPreProcess();
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody(),
                     targetMethod.getName(), variables);
 
@@ -121,7 +120,7 @@ public class Analysis extends PAVBase {
             // System.out.println("Logs of kildall written in "
             // + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
             // tMethod));
-            printResult(result.get(0));
+            printResult(result.get(0), targetDirectory, tClass, tMethod);
 
             drawMethodDependenceGraph(targetMethod);
         } else {
@@ -211,20 +210,34 @@ public class Analysis extends PAVBase {
         return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
-    private static void printResult(List<ProgramPoint> result) {
+    private static String printResult(List<ProgramPoint> result ,String directory , String tClass , String tMethod ) {
+        String ans = "";
         for (ProgramPoint programPoint : result) {
             Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
             for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
-                    if (p.getValue().size() != 0)
-                        System.out
-                                .println(" " + programPoint.methodName + ": in" + getLineNumber(programPoint.getStmt())
-                                        + " "
-                                        + entry.getKey() + " => " + p);
+                    String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
+                    if (p.getValue().size() != 0
+                            && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*"))) {
+                        ans += (baseClass + "." + programPoint.methodName + ": in"
+                                + getLineNumber(programPoint.getStmt())
+                                + " "
+                                + entry.getKey() + " => " + p + "\n");
+                    }
                 }
             }
         }
+        try {
+            FileWriter fileWriter = new FileWriter(String.format("%s/%s.%s.output.txt", directory, tClass, tMethod));
+            fileWriter.write(ans);
+            fileWriter.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        System.out.println(ans);
+        return ans;
     }
 
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
@@ -234,11 +247,13 @@ public class Analysis extends PAVBase {
                     .getLatticeElement()).getState();
             for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
-                    String lineNumber = programPoint.getStmt().getTags()
-                            .get(programPoint.getStmt().getTags().size() - 1).toString();
+                    int lineNumber = ((CustomTag) programPoint.getStmt().getTag("lineNumberTag")).getLineNumber();
+                    String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
+                    System.out.println("hellfondf" + baseClass);
                     if (p.getValue().size() != 0)
                         System.out
-                                .println(programPoint.methodName + ": in" + lineNumber
+                                .println(baseClass + "."
+                                        + programPoint.methodName + ": in" + lineNumber
                                         + " "
                                         + entry.getKey() + " => " + p);
                 }

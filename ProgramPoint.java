@@ -13,6 +13,7 @@ public class ProgramPoint {
     private List<ProgramPoint> successors;
     public ProgramPoint callSuccessor;
     public String methodName;
+    public String className;
     public String callEdgeId;
     public List<ProgramPoint> returnSuccessors;
     public List<String> returnEdgeIds;

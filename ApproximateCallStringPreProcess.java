@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
 import soot.Body;
 import soot.Local;
 import soot.RefType;
@@ -17,7 +18,7 @@ import soot.toolkits.graph.ExceptionalUnitGraph;
 import utils.CustomTag;
 
 public class ApproximateCallStringPreProcess {
-
+    private HashSet<String> visited = new HashSet<>();
     private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
 
@@ -29,7 +30,8 @@ public class ApproximateCallStringPreProcess {
             if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
                 StaticInvokeExpr invokeExpr = (StaticInvokeExpr) stmt.getInvokeExpr();
                 String functionSignature = invokeExpr.getMethod().getSubSignature();
-                if (!functionCallMap.containsKey(functionSignature)) {
+                if (!visited.contains(functionSignature)) {
+                    visited.add(body.getMethod().getSubSignature());
                     List<String> vars = gatherVariablesList(invokeExpr.getMethod().retrieveActiveBody());
                     variables.addAll(vars);
                 }
@@ -55,7 +57,8 @@ public class ApproximateCallStringPreProcess {
                     (Stmt) unit,
                     true);
 
-            programPoint.methodName = body.getMethod().getSubSignature();
+            programPoint.methodName = body.getMethod().getName();
+            programPoint.className = body.getMethod().getName();
 
             unitToProgramPoint.put(unit, programPoint);
             result.add(programPoint);

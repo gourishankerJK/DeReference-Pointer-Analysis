@@ -78,9 +78,14 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     public String toString() {
         String ans = "{";
         int size = this.State.keySet().size();
+
         for (String key : this.State.keySet()) {
             ans += key + " -> ";
-            ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
+            if (this.State.get(key) != null)
+                ans += this.State.get(key).toString();
+            else
+                ans += "[ ]";
+            ans += ((size == 1) ? "" : ", ");
             size--;
         }
 
@@ -128,22 +133,20 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        LatticeElement result = new PointerLatticeElement(State);
         if (st instanceof JIdentityStmt) {
+
             JIdentityStmt Jst = (JIdentityStmt) st;
             Value right = Jst.getRightOp();
             Value left = Jst.getLeftOp();
-            HashSet<String> pointingTo = this.State.getOrDefault(right.toString(), new HashSet<>());
-
-            for (String points : pointingTo) {
-                this.State.put(left.toString(), this.State.get(points));
-            }
+            Map<String, HashSet<String>> result = this.clone().getState();
+            result.put(left.toString(), this.State.getOrDefault(right.toString(), new HashSet<>()));
+            return new PointerLatticeElement(result);
 
         } else if (st instanceof JAssignStmt) {
             return tfAssignmentStmt((AssignStmt) st);
         }
 
-        return result;
+        return this;
     }
 
     /**
@@ -230,6 +233,8 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+
+        System.out.println("LL" + l.getBase().toString());
         for (String pseudoVar : result.State.get(l.getBase().toString())) {
             if (pseudoVar == "null") {
                 continue;

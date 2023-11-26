@@ -5,18 +5,18 @@ public class BasicTest {
         g(new BasicTest());
     }
 
-    static public BasicTest g(BasicTest  v1) {
+    static public BasicTest g(BasicTest v1) {
         v1.f = new BasicTest();
         v1 = new BasicTest();
         return new BasicTest();
     }
-    static public BasicTest g(BasicTest v1 ,int j, BasicTest v2 , int i) {
-         f();
+
+    static public BasicTest g(BasicTest v1, int j, BasicTest v2, int i) {
+        f();
         return new BasicTest();
     }
 
-
-    static BasicTest SizeOneNULLTest() {
+    static BasicTest SizeOneNULLTest(BasicTest v) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         BasicTest v3 = new BasicTest();
@@ -24,6 +24,7 @@ public class BasicTest {
         v2.f = v3;
         v1.f = v2.f;
         v1 = v3.f;
+        g(v1);
         return v1;
     }
 
@@ -43,11 +44,12 @@ public class BasicTest {
         }
 
     }
+
     static void fun1() {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
-      g(v1);
+        g(v1);
     }
 
     public static void conditional_check() {
@@ -90,9 +92,11 @@ public class BasicTest {
         nullify(x);
         return;
     }
+
     static boolean conditional(BasicTest x, BasicTest y) {
         return x.f == y.f;
     }
+
     static int multipleReturn(BasicTest x) {
         if (conditional(x, null)) {
             x.f = null;
@@ -101,6 +105,7 @@ public class BasicTest {
             return 3;
         }
     }
+
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
@@ -114,9 +119,11 @@ public class BasicTest {
         multipleReturn(v2);
         // Situation 4 partially -- union for an object field
     }
+
     static void doubleRec2(BasicTest x) {
         doubleRec1(x);
     }
+
     static void doubleRec1(BasicTest x) {
         doubleRec2(x);
     }
