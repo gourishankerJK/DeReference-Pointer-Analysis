@@ -1,19 +1,22 @@
 public class BasicTest {
     BasicTest f, g;
 
-    static public void f(BasicTest v1 ) {
-       //rec_test(new BasicTest());
-      // v1.f = new BasicTest();
+    static public void f() {
+        BasicTest x = REC_TEST_2(new BasicTest());
+        x.f = null;
+        // v1.f = new BasicTest();
 
     }
-    static public void fa(BasicTest v1 ) {
-       //rec_test(new BasicTest());
-      // v1.f = new BasicTest();
-       fa(v1);
+
+    static public void fa(BasicTest v1) {
+        // rec_test(new BasicTest());
+        // v1.f = new BasicTest();
+        fa(v1);
     }
+
     static public BasicTest rec_test(BasicTest v1) {
         BasicTest n = new BasicTest();
-        
+        rec_test_1(v1);
         if (n.f == v1) {
             return n.f;
         } else {
@@ -21,6 +24,19 @@ public class BasicTest {
             return n;
         }
     }
+
+    static public BasicTest REC_TEST_2(BasicTest v1) {
+        BasicTest n = new BasicTest();
+        rec_test_1(v1);
+        return n;
+    }
+
+    static public BasicTest rec_test_1(BasicTest v1) {
+        BasicTest x = new BasicTest();
+        rec_test_1(x);
+        return x;
+    }
+
     static public BasicTest g(BasicTest v1) {
         v1.f = new BasicTest();
         v1 = new BasicTest();

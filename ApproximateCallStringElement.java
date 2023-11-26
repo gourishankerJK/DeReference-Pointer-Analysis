@@ -73,26 +73,22 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt) {
-            return handleReturnFn(st);
-        } else if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
+        if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
             return handleCallTransferFn(st);
         } else {
             return handleNormalAssignFn(st);
         }
     }
 
-    private LatticeElement handleReturnFn(Stmt st) {
+    private LatticeElement handleReturnFn(Stmt st, String returnEdge) {
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         Map<FixedSizeStack<String>, PointerLatticeElement> facts = new HashMap<>();
 
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
             FixedSizeStack<String> callString = entry.getKey().clone();
             PointerLatticeElement value = entry.getValue().clone();
-     
-            System.out.println("gouri"  + st);
-            callString.popBack();
-            if (callString.size() == 0) {
+            /// if the call edge doesn't corresponds to return edge
+            if (!returnEdge.equals(callString.popBack()) || (callString.size() == 0)) {
                 curState.remove(callString);
             } else {
                 List<String> callers = getCallers(st, callString.getfrontElement());
@@ -185,13 +181,19 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     private String getCallId(Stmt st) {
         CustomTag tag = (CustomTag) st.getTag("CallerIdTag");
-        if(tag != null) return tag.getStringTag();
+        if (tag != null)
+            return tag.getStringTag();
         return null;
     }
 
     private List<String> getCallers(Stmt st, String value) {
         CustomTag t = (CustomTag) st.getTag("CallersTag");
         return t.getHashMapTag(value);
+    }
+
+    @Override
+    public LatticeElement tf_returnstmt(String Edge, Stmt st) {
+        return handleReturnFn(st, Edge);
     }
 
 }

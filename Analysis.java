@@ -106,7 +106,7 @@ public class Analysis extends PAVBase {
                     targetMethod.getName(), variables);
 
             // Compute Least fix point using Kildall's algorithms
-            MakeInterProceduralGraph(preProcessedBody);
+
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
             // writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
@@ -120,7 +120,7 @@ public class Analysis extends PAVBase {
             // + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
             // tMethod));
             printResult(result.get(0), targetDirectory, tClass, tMethod);
-
+            MakeInterProceduralGraph(result.get(0));
             drawMethodDependenceGraph(targetMethod);
         } else {
             System.out.println("Method not found: " + tMethod);
@@ -156,7 +156,8 @@ public class Analysis extends PAVBase {
                     currentName = pp.methodName;
                 }
                 fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \"" + s.methodName + " "
-                        + s.getStmt() + "\"" + System.lineSeparator());
+                        + s.getStmt() + "\"" + "[ label=\"" + s.getLatticeElement().toString() + "\"]"
+                        + System.lineSeparator());
             }
         }
         fileWriter.write("}" + System.lineSeparator());
@@ -209,7 +210,7 @@ public class Analysis extends PAVBase {
         return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
-    private static String printResult(List<ProgramPoint> result ,String directory , String tClass , String tMethod ) {
+    private static String printResult(List<ProgramPoint> result, String directory, String tClass, String tMethod) {
         String ans = "";
         for (ProgramPoint programPoint : result) {
             Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint

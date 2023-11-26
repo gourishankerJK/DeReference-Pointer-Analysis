@@ -84,8 +84,13 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         for (String key : this.State.keySet()) {
             if (this.State.get(key) != null) {
 
-                ans += key + " -> ";
-                ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
+                if (this.State.get(key).size() != 0) {
+                    ans += key + " -> ";
+
+                    ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
+                    ans += System.lineSeparator();
+
+                }
                 size--;
             }
         }
@@ -248,7 +253,6 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
 
-        System.out.println("LL" + l.getBase().toString());
         for (String pseudoVar : result.State.get(l.getBase().toString())) {
             if (pseudoVar == "null") {
                 continue;
@@ -539,6 +543,12 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
             result = clearState(result);
         }
         return result;
+    }
+
+    @Override
+    public LatticeElement tf_returnstmt(String Edge, Stmt st) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'tf_returnstmt'");
     }
 
 }

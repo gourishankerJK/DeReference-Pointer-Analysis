@@ -107,6 +107,8 @@ public class ApproximateCallStringPreProcess {
                     for (ProgramPoint retSucc : functionReturnMap.get(functionSignature)) {
                         retSucc.returnSuccessors.add(unitToProgramPoint.get(succ));
                         retSucc.returnEdgeIds.add(callEdgeId);
+                        retSucc.getStmt().addTag(new CustomTag("returnTag", retSucc.returnEdgeIds.get(0)));
+                        System.out.println("I'm here" + retSucc.getStmt());
                         CustomTag callersTag = (CustomTag) (retSucc.getStmt().getTag("CallersTag"));
                         if (callersTag != null)
                             callersTag.UpdateMapTag(functionSignature, callEdgeId);
@@ -115,6 +117,7 @@ public class ApproximateCallStringPreProcess {
                                     body.getMethod().getDeclaringClass(),
                                     invokeExpr.getMethod().getName(), getLineNumber(retSucc.getStmt()));
                             CustomTag tag = new CustomTag("CallersTag", whereIhavetoReturnId, callEdgeId);
+                        
                             retSucc.getStmt().addTag(tag);
 
                         }
