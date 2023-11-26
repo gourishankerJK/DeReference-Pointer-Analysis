@@ -80,4 +80,18 @@ public class ProgramPoint {
     public void setMarkPoint(boolean mark) {
         this.markedForPropagation = mark;
     }
+
+    @Override
+    public String toString() {
+        String ans = "Program Point \n --------------\n";
+        ans += "\n Stmt " + statement.toString() + "\n";
+        ans += "\n Lattice " + ((ApproximateCallStringElement) latticeElement);
+        ans += "\nBoolean " + isMarked();
+        ans += "\n Sucessors " + successors;
+        ans += "\nCallSucessors " + callSuccessor;
+        ans += "\n RetusnSucessors " + returnSuccessors;
+        ans += "\nCallEdgeId " + callEdgeId;
+        ans += "\n--------------------\n";
+        return ans;
+    }
 }

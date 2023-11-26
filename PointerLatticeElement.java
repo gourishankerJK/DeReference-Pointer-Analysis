@@ -76,7 +76,8 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
 
     @Override
     public String toString() {
-        if (this.State == null) return "";
+        if (this.State == null)
+            return "";
         String ans = "{";
         int size = this.State.keySet().size();
 
@@ -129,6 +130,19 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     @Override
     public boolean equals(LatticeElement r) {
         return this.State.equals(((PointerLatticeElement) r).State);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        PointerLatticeElement other = (PointerLatticeElement) obj;
+
+        return this.State.equals(other.State);
     }
 
     @Override

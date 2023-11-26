@@ -248,7 +248,6 @@ public class Analysis extends PAVBase {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     int lineNumber = ((CustomTag) programPoint.getStmt().getTag("lineNumberTag")).getLineNumber();
                     String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
-                    System.out.println("hellfondf" + baseClass);
                     if (p.getValue().size() != 0)
                         System.out
                                 .println(baseClass + "."

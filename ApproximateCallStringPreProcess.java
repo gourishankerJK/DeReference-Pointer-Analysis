@@ -114,10 +114,9 @@ public class ApproximateCallStringPreProcess {
                             String whereIhavetoReturnId = String.format("%s.%s.in%02d",
                                     body.getMethod().getDeclaringClass(),
                                     invokeExpr.getMethod().getName(), getLineNumber(retSucc.getStmt()));
-                            System.out.println(whereIhavetoReturnId);
                             CustomTag tag = new CustomTag("CallersTag", whereIhavetoReturnId, callEdgeId);
                             retSucc.getStmt().addTag(tag);
-                            System.out.println("Heoldfsdafod" + retSucc.getStmt().getTags());
+
                         }
                     }
                 }

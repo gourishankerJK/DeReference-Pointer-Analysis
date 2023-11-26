@@ -1,8 +1,15 @@
 public class BasicTest {
     BasicTest f, g;
 
-    static public void f() {
-        rec_test(new BasicTest());
+    static public void f(BasicTest v1 ) {
+       //rec_test(new BasicTest());
+      // v1.f = new BasicTest();
+
+    }
+    static public void fa(BasicTest v1 ) {
+       //rec_test(new BasicTest());
+      // v1.f = new BasicTest();
+       fa(v1);
     }
     static public BasicTest rec_test(BasicTest v1) {
         BasicTest n = new BasicTest();
@@ -21,7 +28,6 @@ public class BasicTest {
     }
 
     static public BasicTest g(BasicTest v1, int j, BasicTest v2, int i) {
-        f();
         return new BasicTest();
     }
 

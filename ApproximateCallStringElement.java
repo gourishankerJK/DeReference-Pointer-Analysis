@@ -89,6 +89,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
             FixedSizeStack<String> callString = entry.getKey().clone();
             PointerLatticeElement value = entry.getValue().clone();
+     
+            System.out.println("gouri"  + st);
             callString.popBack();
             if (callString.size() == 0) {
                 curState.remove(callString);
@@ -140,6 +142,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             }
             i++;
         }
+        // System.out.println(curState);
 
         return new ApproximateCallStringElement(curState);
     }
@@ -182,7 +185,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     private String getCallId(Stmt st) {
         CustomTag tag = (CustomTag) st.getTag("CallerIdTag");
-        return tag.getStringTag();
+        if(tag != null) return tag.getStringTag();
+        return null;
     }
 
     private List<String> getCallers(Stmt st, String value) {
