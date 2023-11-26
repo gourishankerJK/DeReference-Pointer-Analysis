@@ -76,17 +76,17 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
 
     @Override
     public String toString() {
+        if (this.State == null) return "";
         String ans = "{";
         int size = this.State.keySet().size();
 
         for (String key : this.State.keySet()) {
-            ans += key + " -> ";
-            if (this.State.get(key) != null)
-                ans += this.State.get(key).toString();
-            else
-                ans += "[ ]";
-            ans += ((size == 1) ? "" : ", ");
-            size--;
+            if (this.State.get(key) != null) {
+
+                ans += key + " -> ";
+                ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
+                size--;
+            }
         }
 
         return ans + "}";

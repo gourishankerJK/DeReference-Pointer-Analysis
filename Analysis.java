@@ -105,9 +105,8 @@ public class Analysis extends PAVBase {
             List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody(),
                     targetMethod.getName(), variables);
 
-            MakeInterProceduralGraph(preProcessedBody);
-
             // Compute Least fix point using Kildall's algorithms
+            MakeInterProceduralGraph(preProcessedBody);
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
             // Format the data according to required output
             // writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
@@ -133,8 +132,8 @@ public class Analysis extends PAVBase {
         FileWriter fileWriter = new FileWriter(String.format("./callgraph.dot"));
         int j = 0;
         Random random = new Random();
-        fileWriter.write("digraph G {bgcolor=\"lightblue\" node [shape=\"Mrectangle\"]" + System.lineSeparator());
-        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator() + "bgcolor= grey");
+        fileWriter.write("digraph G { node [shape=\"Mrectangle\"]" + System.lineSeparator());
+        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator());
         String[] bgColors = {
                 "red",
                 "green",
@@ -153,7 +152,7 @@ public class Analysis extends PAVBase {
                     int index = random.nextInt(bgColors.length);
                     fileWriter.write(
                             "}" + "subgraph cluster_" + j++ + " {"
-                                    + System.lineSeparator() + "bgcolor=" + bgColors[index]);
+                                    + System.lineSeparator());
                     currentName = pp.methodName;
                 }
                 fileWriter.write("\"" + pp.methodName + " " + pp.getStmt() + "\" -> \"" + s.methodName + " "

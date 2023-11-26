@@ -2,9 +2,18 @@ public class BasicTest {
     BasicTest f, g;
 
     static public void f() {
-        g(new BasicTest());
+        rec_test(new BasicTest());
     }
-
+    static public BasicTest rec_test(BasicTest v1) {
+        BasicTest n = new BasicTest();
+        
+        if (n.f == v1) {
+            return n.f;
+        } else {
+            v1.f = null;
+            return n;
+        }
+    }
     static public BasicTest g(BasicTest v1) {
         v1.f = new BasicTest();
         v1 = new BasicTest();

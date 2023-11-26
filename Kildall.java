@@ -21,18 +21,11 @@ public class Kildall {
         // Unmark and propagate to the successors
         analysisPoint.setMarkPoint(false);
         List<ProgramPoint> logFact = new ArrayList<>();
-        for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
-            LatticeElement joinElement;
-
-            if (analysisPoint.getStmt().branches()) {
-                joinElement = successor.getLatticeElement()
-                        .join_op(analysisPoint.getLatticeElement().tf_condstmt(i == 1, analysisPoint.getStmt()));
-            } else {
-                joinElement = successor.getLatticeElement()
-                        .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
-            }
-            // Unmark the successor nodes based on the previous value
-
+        if (analysisPoint.callEdgeId != null) {
+            ProgramPoint successor = analysisPoint.callSuccessor;
+            LatticeElement joinElement = successor.getLatticeElement()
+                                        .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
+            
             if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
 
                 successor.setMarkPoint(false);
@@ -40,8 +33,31 @@ public class Kildall {
                 successor.setMarkPoint(true);
                 successor.setLatticeElement(joinElement);
             }
-            i++;
-            logFact.add(new ProgramPoint(successor.getLatticeElement(), successor.getStmt(), successor.isMarked()));
+                                    
+        } else {
+
+            for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
+                LatticeElement joinElement;
+    
+                if (analysisPoint.getStmt().branches()) {
+                    joinElement = successor.getLatticeElement()
+                            .join_op(analysisPoint.getLatticeElement().tf_condstmt(i == 1, analysisPoint.getStmt()));
+                } else {
+                    joinElement = successor.getLatticeElement()
+                            .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
+                }
+                // Unmark the successor nodes based on the previous value
+    
+                if (joinElement.equals(successor.getLatticeElement()) && !successor.isMarked()) {
+    
+                    successor.setMarkPoint(false);
+                } else {
+                    successor.setMarkPoint(true);
+                    successor.setLatticeElement(joinElement);
+                }
+                i++;
+                logFact.add(new ProgramPoint(successor.getLatticeElement(), successor.getStmt(), successor.isMarked()));
+            }
         }
         logFactLists.add(logFact);
     }

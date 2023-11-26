@@ -68,11 +68,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     @Override
     public boolean equals(LatticeElement r) {
         ApproximateCallStringElement element = (ApproximateCallStringElement) r;
-        boolean flag = true;
-        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
-            flag = element.State.getOrDefault(entry.getKey(), new PointerLatticeElement()).equals(entry.getValue());
-        }
-        return flag;
+        return this.State.equals(element.getState());
     }
 
     @Override
@@ -81,40 +77,37 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             return handleReturnFn(st);
         } else if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
             return handleCallTransferFn(st);
-
         } else {
             return handleNormalAssignFn(st);
         }
     }
 
     private LatticeElement handleReturnFn(Stmt st) {
-
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         Map<FixedSizeStack<String>, PointerLatticeElement> facts = new HashMap<>();
-        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
-            FixedSizeStack<String> key = entry.getKey();
-            PointerLatticeElement value = entry.getValue().clone();
-            key.popBack();
-            if (key.size() == 0) {
-                curState.remove(key);
-            } else {
-                List<String> callers = getCallers(st, key.getfrontElement());
 
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+            FixedSizeStack<String> callString = entry.getKey().clone();
+            PointerLatticeElement value = entry.getValue().clone();
+            callString.popBack();
+            if (callString.size() == 0) {
+                curState.remove(callString);
+            } else {
+                List<String> callers = getCallers(st, callString.getfrontElement());
                 // remove @parameter.*
                 value = value.removeFromState();
                 // caller is main itself ...
                 if (callers.size() == 0) {
-                    facts.put(key, value);
+                    facts.put(callString, value);
                 } else {
                     for (String s : callers) {
-                        FixedSizeStack<String> newKey = key.clone();
+                        FixedSizeStack<String> newKey = callString.clone();
                         newKey.pushFront(s);
-                        facts.put(key, value);
+                        facts.put(callString, value);
                     }
                 }
             }
         }
-        System.out.println("facts" + facts);
         return new ApproximateCallStringElement(facts);
     }
 
@@ -147,6 +140,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             }
             i++;
         }
+
         return new ApproximateCallStringElement(curState);
     }
 

@@ -96,6 +96,6 @@ public class FixedSizeStack<T> implements Cloneable {
             return false;
         }
         FixedSizeStack<?> other = (FixedSizeStack<?>) obj;
-        return Objects.equals(stack, other.stack);
+        return stack.equals(other.stack);
     }
 }
