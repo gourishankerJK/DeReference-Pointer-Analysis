@@ -26,8 +26,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     public ApproximateCallStringElement(List<String> variables, boolean mainFunction) {
         Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
         FixedSizeStack<String> stack = new FixedSizeStack<>();
-        if (mainFunction)
-            stack.pushBack("@");
+        // if (mainFunction)
+        // stack.pushBack("@");
         temp.put(stack, new PointerLatticeElement(variables));
         this.State = temp;
     }
@@ -37,9 +37,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         ApproximateCallStringElement currentState = this.clone();
         ApproximateCallStringElement incomingState = ((ApproximateCallStringElement) r).clone();
         Map<FixedSizeStack<String>, PointerLatticeElement> joinedState = new HashMap<>();
-
         for (FixedSizeStack<String> key : currentState.State.keySet()) {
-            if (key.size() == 0)
+            if (currentState.State.get(key).isEmpty())
                 continue;
             if (!incomingState.State.containsKey(key)) {
                 joinedState.put(key, currentState.State.get(key));
@@ -52,10 +51,15 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         }
 
         for (FixedSizeStack<String> key : incomingState.State.keySet()) {
-            if (key.size() == 0)
+            if (incomingState.State.get(key).isEmpty())
                 continue;
             if (!currentState.State.containsKey(key)) {
                 joinedState.put(key, incomingState.State.get(key));
+            } else {
+                PointerLatticeElement currentPointer = currentState.State.get(key);
+                PointerLatticeElement incomingPointer = incomingState.State.get(key);
+                PointerLatticeElement joinedPointer = (PointerLatticeElement) currentPointer.join_op(incomingPointer);
+                joinedState.put(key, joinedPointer);
             }
         }
         return new ApproximateCallStringElement(joinedState);
@@ -84,13 +88,10 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         Map<FixedSizeStack<String>, PointerLatticeElement> facts = new HashMap<>();
 
-        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
             FixedSizeStack<String> callString = entry.getKey().clone();
             PointerLatticeElement value = entry.getValue().clone();
-            /// if the call edge doesn't corresponds to return edge
-            if (!returnEdge.equals(callString.popBack()) || (callString.size() == 0)) {
-                curState.remove(callString);
-            } else {
+            if (callString.size() != 0 && returnEdge.equals(callString.popBack())) {
                 List<String> callers = getCallers(st, callString.getfrontElement());
                 // remove @parameter.*
                 value = value.removeFromState();
@@ -161,11 +162,11 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     @Override
     public String toString() {
         String res = "";
-        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry: this.State.entrySet()) {
-            res+= entry.getKey().toString();
-            res+= " => ";
+        for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : this.State.entrySet()) {
+            res += entry.getKey().toString();
+            res += " => ";
             res += entry.getValue().toString();
-            res+= "\n\n";
+            res += "\n\n";
         }
         return res;
     }

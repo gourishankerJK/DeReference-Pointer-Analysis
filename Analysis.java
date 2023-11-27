@@ -108,18 +108,19 @@ public class Analysis extends PAVBase {
             // Compute Least fix point using Kildall's algorithms
 
             List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
-            // Format the data according to required output
-            // writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
-            // System.out.println("Final output written in "
-            // + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
-            // for (int i = 1; i < result.size(); i++) {
-            // writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
-            // }
-            // writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
-            // System.out.println("Logs of kildall written in "
-            // + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
-            // tMethod));
-            printResult(result.get(0), targetDirectory, tClass, tMethod);
+
+            List<String> output = formatResult(result.get(0), targetDirectory, tClass, tMethod);
+            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, output);
+            System.out.println("Final output written in "
+                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
+            for (int i = 1; i < result.size(); i++) {
+                writeResultToFile(i, targetDirectory, tClass, tMethod, mode,
+                        formatResult(result.get(i), targetDirectory, tClass, tMethod));
+            }
+            writeResultToFile(10, targetDirectory, tClass, tMethod, mode, output);
+            System.out.println("Logs of kildall written in "
+                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
+                            tMethod));
             MakeInterProceduralGraph(result.get(0));
             drawMethodDependenceGraph(targetMethod);
         } else {
@@ -180,10 +181,8 @@ public class Analysis extends PAVBase {
     }
 
     private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,
-            List<ProgramPoint> result)
+            List<String> output)
             throws IOException {
-        Set<ResultTuple> resultFormatted = getFormattedResult(result, tMethod);
-        String[] output = fmtOutputData(resultFormatted, tClass + ".");
         FileWriter fileWriter;
         String type = logIndex != 0 ? "fulloutput" : "output";
         try {
@@ -196,6 +195,7 @@ public class Analysis extends PAVBase {
                         logIndex > 1);
             }
             for (String str : output) {
+                System.out.println(str);
                 fileWriter.write(str + System.lineSeparator());
             }
             if (logIndex >= 1)
@@ -230,8 +230,10 @@ public class Analysis extends PAVBase {
         return res;
     }
 
-    private static String printResult(List<ProgramPoint> result, String directory, String tClass, String tMethod) {
+    private static List<String> formatResult(List<ProgramPoint> result, String directory, String tClass,
+            String tMethod) {
         String ans = "";
+        List<String> outputs = new ArrayList<String>();
         for (ProgramPoint programPoint : result) {
             Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
@@ -239,30 +241,22 @@ public class Analysis extends PAVBase {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
                     if (p.getValue().size() != 0
-                            && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*")) &&
-                            (p.getKey().startsWith(programPoint.methodName)
-                                    || !p.getKey().contains("::") && !p.getKey().contains("@"))) {
-                        String ek = entry.getKey().size() == 1 ? entry.getKey().getfrontElement()
+                            && (p.getKey().matches(programPoint.methodName + ".*") || !p.getKey().matches(".*::.*"))
+                            && !p.getKey().matches("@.*")) {
+                        String ek = entry.getKey().size() == 0 ? "@"
                                 : entry.getKey().toString();
-                        ans += (baseClass + "." + programPoint.methodName + ": "
-                                + String.format("in%02d", getLineNumber(programPoint.getStmt()))
+                        ans = (baseClass + "." + programPoint.methodName + ": "
+                                + String.format("in%02d:", getLineNumber(programPoint.getStmt()))
 
                                 + " "
-                                + ek + " => " + formatEntry(p) + "\n");
+                                + ek + " => " + formatEntry(p));
+                        outputs.add(ans);
                     }
                 }
             }
         }
-        try {
-            FileWriter fileWriter = new FileWriter(String.format("%s/%s.%s.output.txt", directory, tClass, tMethod));
-            fileWriter.write(ans);
-            fileWriter.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        System.out.println(ans);
-        return ans;
+        Collections.sort(outputs);
+        return outputs;
     }
 
     private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {

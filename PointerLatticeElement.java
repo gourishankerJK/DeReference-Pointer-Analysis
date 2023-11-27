@@ -97,6 +97,15 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         return ans + "}";
     }
 
+    public boolean isEmpty() {
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+            if (entry.getKey().length() != 0 && entry.getValue().size() != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static String getAllocationSiteSymbol(Stmt st) {
         CustomTag lineNo = (CustomTag) st.getTag("lineNumberTag");
         CustomTag functionName = (CustomTag) st.getTag("functionName");
