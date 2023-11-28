@@ -1,4 +1,6 @@
 package utils;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +14,18 @@ public class CustomTag implements Tag {
     String name = "CustomTag";
     int lineNumber = 0;
     String stringTag = "Empty";
+    public Map<Integer, String> returnVariableMap;
 
     public CustomTag(String tagName, Map<String, List<String>> test) {
         this.name = tagName;
         this.p = new HashMap<>(test);
+
+    }
+
+    public CustomTag(String tagName, int key, String value) {
+        this.name = tagName;
+        this.returnVariableMap = new HashMap<>();
+        this.returnVariableMap.put(key, value);
 
     }
 
@@ -26,12 +36,12 @@ public class CustomTag implements Tag {
         this.p = m;
     }
 
-     public CustomTag(String tagName, int lineNumber) {
+    public CustomTag(String tagName, int lineNumber) {
         this.name = tagName;
         this.lineNumber = lineNumber;
     }
 
-     public CustomTag(String tagName, String stringTag) {
+    public CustomTag(String tagName, String stringTag) {
         this.name = tagName;
         this.stringTag = stringTag;
     }
@@ -40,8 +50,14 @@ public class CustomTag implements Tag {
         if (this.p.get(callId) != null) {
             this.p.get(callId).add(test);
         } else {
-            this.p.put(callId, Arrays.asList(test));
+            List<String> demo = new ArrayList<>();
+            demo.add(test);
+            this.p.put(callId, demo);
         }
+    }
+
+    public void updateReturnVariableMap(int key, String variable) {
+        this.returnVariableMap.put(key, variable);
     }
 
     @Override
@@ -68,6 +84,14 @@ public class CustomTag implements Tag {
 
     public String getStringTag() {
         return this.stringTag;
+    }
+
+    public String getReturnVariable(Integer hashCode) {
+        return returnVariableMap.get(hashCode);
+    }
+
+    public Map<Integer, String> getReturnVariableMap() {
+        return this.returnVariableMap;
     }
 
     @Override

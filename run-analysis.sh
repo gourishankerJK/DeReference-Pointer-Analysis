@@ -12,9 +12,14 @@ set -e
 # XXX you can add / delete / comment / uncomment lines below
 mkdir -p iterations
 ./run-analysis-one.sh "./target1-pub" "PubTest"   "PubTest"   "test1"
-dot -Tpng callgraph.dot -o callgraph.png
+dot -Tsvg callgraph.dot -o callgraph.svg
 
 find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
     echo "Processing: $file"
-    dot -Tpng "$file" -o "$file.png"
+    dot -Tsvg "$file" -o "$file.svg"
 done
+
+rm -rf iterations/*.dot
+
+rm iterations.pdf
+rsvg-convert -f pdf -o iterations.pdf iterations/*.svg

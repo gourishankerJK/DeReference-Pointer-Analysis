@@ -1,7 +1,9 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.HashSet;
 import soot.Body;
 import soot.Local;
@@ -23,10 +25,49 @@ public class ApproximateCallStringPreProcess {
     private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
 
-    // A map to handle assignments for the return edges.
-    public static Map<Integer, String> returnVariableMap = new HashMap<>();
+    public List<ProgramPoint> PreProcess(Body body) {
+        List<String> variables = gatherVariablesList(body);
+        List<ProgramPoint> result = _preProcess(body, variables);
+        Map<String, List<String>> callersList = getCallersList(result);
+        tagCallerListToReturnUnit(result, callersList);
+        System.out.println("whoIsCallingMap: " + callersList);
+        return result;
+    }
 
-    public List<String> gatherVariablesList(Body body) {
+    private Map<String, List<String>> getCallersList(List<ProgramPoint> body) {
+        Map<String, List<String>> whoIsCallingMap = new HashMap<>();
+        for (ProgramPoint progPoint : body) {
+            if (progPoint.callEdgeId != null) {
+                String method = progPoint.callSuccessor.getMethodName();
+                for (ProgramPoint progPoint1 : body) {
+                    if (progPoint1.getMethodName() == method) {
+                        if (progPoint1.callEdgeId != null) {
+                            if (whoIsCallingMap.get(progPoint1.callEdgeId) != null)
+                                whoIsCallingMap.get(progPoint1.callEdgeId).add(progPoint.callEdgeId);
+                            else {
+                                List<String> t = new ArrayList<>();
+                                t.add(progPoint.callEdgeId);
+                                whoIsCallingMap.put(progPoint1.callEdgeId, t);
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        return whoIsCallingMap;
+    }
+
+    private void tagCallerListToReturnUnit(List<ProgramPoint> programPoints, Map<String, List<String>> value) {
+        for (ProgramPoint programPoint : programPoints) {
+            Stmt st = programPoint.getStmt();
+            if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt) {
+                st.addTag(new CustomTag("CallersList", value));
+            }
+        }
+    }
+
+    private List<String> gatherVariablesList(Body body) {
         renameVariable(body);
         List<String> variables = GetRefTypeVariables(body);
         for (Unit unit : body.getUnits()) {
@@ -44,7 +85,7 @@ public class ApproximateCallStringPreProcess {
         return variables;
     }
 
-    public List<ProgramPoint> PreProcess(Body body, String mainFunction, List<String> variables) {
+    private List<ProgramPoint> _preProcess(Body body, List<String> variables) {
 
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
         HashMap<Unit, ProgramPoint> unitToProgramPoint = new HashMap<>();
@@ -57,12 +98,12 @@ public class ApproximateCallStringPreProcess {
             unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
             unit.addTag(new CustomTag("functionName", body.getMethod().getName()));
             ProgramPoint programPoint = new ProgramPoint(
-                    new ApproximateCallStringElement(variables, body.getMethod().getName().equals(mainFunction)),
+                    new ApproximateCallStringElement(variables),
                     (Stmt) unit,
                     true);
 
-            programPoint.methodName = body.getMethod().getName();
-            programPoint.className = body.getMethod().getName();
+            programPoint.setMethodName(body.getMethod().getName());
+            programPoint.className = body.getMethod().getDeclaringClass().toString();
 
             unitToProgramPoint.put(unit, programPoint);
             result.add(programPoint);
@@ -95,7 +136,7 @@ public class ApproximateCallStringPreProcess {
 
                 // Process this body if not already processed.
                 if (!functionCallMap.containsKey(functionSignature)) {
-                    List<ProgramPoint> newBody = PreProcess(invokeExpr.getMethod().retrieveActiveBody(), mainFunction,
+                    List<ProgramPoint> newBody = _preProcess(invokeExpr.getMethod().retrieveActiveBody(),
                             variables);
                     result.addAll(newBody);
                 }
@@ -104,23 +145,37 @@ public class ApproximateCallStringPreProcess {
                 unit.addTag(new CustomTag("CallerIdTag", callEdgeId));
                 unitToProgramPoint.get(unit).callEdgeId = callEdgeId;
                 // Here assumption is that from one statement there can only be one call, and
-                // its successor can only be one statement, meaning this for loop will EXECUTE ONLY 1 TIME.
+                // its successor can only be one statement, meaning this for loop will EXECUTE
+                // ONLY 1 TIME.
                 for (Unit succ : graph.getSuccsOf(unit)) {
-                    for (ProgramPoint returnProgramPoint : functionReturnMap.get(functionSignature)) {
-                        returnProgramPoint.returnSuccessors.add(unitToProgramPoint.get(succ));
-                        returnProgramPoint.returnEdgeIds.add(callEdgeId);
-                        if (returnProgramPoint.getStmt() instanceof JReturnStmt && unit instanceof JAssignStmt) {
-                            String lhs = ((JAssignStmt) unit).getLeftOp().toString();
-                            returnVariableMap.put(returnProgramPoint.getStmt().hashCode(), lhs);
-                        }
-                    }
+                    variableMappingForReturnAssign(unitToProgramPoint, unit, functionSignature, callEdgeId, succ);
                 }
             }
         }
         return result;
     }
 
-    public static List<String> GetRefTypeVariables(Body body) {
+    private void variableMappingForReturnAssign(HashMap<Unit, ProgramPoint> unitToProgramPoint, Unit unit,
+            String functionSignature,
+            String callEdgeId, Unit succ) {
+        for (ProgramPoint returnProgramPoint : functionReturnMap.get(functionSignature)) {
+            returnProgramPoint.returnSuccessors.add(unitToProgramPoint.get(succ));
+            returnProgramPoint.returnEdgeIds.add(callEdgeId);
+            if (returnProgramPoint.getStmt() instanceof JReturnStmt && unit instanceof JAssignStmt) {
+                String lhs = ((JAssignStmt) unit).getLeftOp().toString();
+                CustomTag returnVarTag = (CustomTag) returnProgramPoint.getStmt().getTag("ReturnVars");
+                if (returnVarTag == null) {
+                    returnVarTag = new CustomTag("ReturnVars", returnProgramPoint.getStmt().hashCode(),
+                            lhs);
+                    returnProgramPoint.getStmt().addTag(returnVarTag);
+                } else {
+                    returnVarTag.updateReturnVariableMap(returnProgramPoint.getStmt().hashCode(), lhs);
+                }
+            }
+        }
+    }
+
+    private List<String> GetRefTypeVariables(Body body) {
         List<String> result = new ArrayList<String>();
         for (Local local : body.getLocals()) {
 
@@ -131,11 +186,11 @@ public class ApproximateCallStringPreProcess {
         return result;
     }
 
-    private static int getLineNumber(Stmt st) {
+    private int getLineNumber(Stmt st) {
         return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
     }
 
-    public static void renameVariable(Body body) {
+    private void renameVariable(Body body) {
         for (Unit unit : body.getUnits()) {
             String functionName = body.getMethod().getName();
             if (unit instanceof IdentityStmt) {
@@ -160,7 +215,7 @@ public class ApproximateCallStringPreProcess {
         }
     }
 
-    public static void changeName(Local local, String functionName) {
+    private void changeName(Local local, String functionName) {
         String oldName = local.getName();
         String newVariableName = functionName + "::" + oldName;
         if (!oldName.contains("::"))

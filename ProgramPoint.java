@@ -12,7 +12,7 @@ public class ProgramPoint {
     private boolean markedForPropagation;
     private List<ProgramPoint> successors;
     public ProgramPoint callSuccessor;
-    public String methodName;
+    private String methodName;
     public String className;
     public String callEdgeId;
     public List<ProgramPoint> returnSuccessors;
@@ -41,6 +41,12 @@ public class ProgramPoint {
     public Stmt getStmt() {
         return statement;
     }
+    public void setMethodName(String methodName){
+        this.methodName = methodName;
+    }
+    public String getMethodName(){
+        return this.methodName;
+    }
 
     public void getStmt(Stmt st) {
         this.statement = st;
@@ -54,10 +60,14 @@ public class ProgramPoint {
 
     public List<ProgramPoint> getAllSuccessors() {
         List<ProgramPoint> ls = new ArrayList<>();
-        ls.addAll(successors);
-        ls.addAll(returnSuccessors);
         if (callSuccessor != null)
             ls.add(callSuccessor);
+        if (this.callEdgeId != null) {
+            return ls;
+        }
+        ls.addAll(successors);
+        ls.addAll(returnSuccessors);
+
         return ls;
     }
 

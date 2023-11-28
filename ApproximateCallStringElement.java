@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,11 +24,9 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         this.State = temp;
     }
 
-    public ApproximateCallStringElement(List<String> variables, boolean mainFunction) {
+    public ApproximateCallStringElement(List<String> variables) {
         Map<FixedSizeStack<String>, PointerLatticeElement> temp = new HashMap<>();
         FixedSizeStack<String> stack = new FixedSizeStack<>();
-        // if (mainFunction)
-        // stack.pushBack("@");
         temp.put(stack, new PointerLatticeElement(variables));
         this.State = temp;
     }
@@ -86,23 +85,16 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     private LatticeElement handleReturnFn(Stmt st, String returnEdge) {
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
-
-        // Input will be facts of this current state
-        // Statement is the effect we want to return
-
-        // need return edge to compare the last element
-        // need variable corresponding to this edge.
         Map<FixedSizeStack<String>, PointerLatticeElement> output = new HashMap<>();
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
             FixedSizeStack<String> callString = entry.getKey().clone();
             PointerLatticeElement element = entry.getValue().clone();
             if (st instanceof JReturnStmt) {
-                JReturnStmt retStmt = (JReturnStmt) st;
-                String retOp = retStmt.getOp().toString();
+                String retOp = ((JReturnStmt) st).getOp().toString();
 
                 Map<String, HashSet<String>> newstate = element.getState();
-                String varToBeMapped = ApproximateCallStringPreProcess.returnVariableMap.get(st.hashCode());
-                if (varToBeMapped != null ) {
+                String varToBeMapped = ((CustomTag) st.getTag("ReturnVars")).getReturnVariable(st.hashCode());
+                if (varToBeMapped != null) {
                     // handle for null statement
                     if (retOp != "null") {
                         newstate.put(varToBeMapped, element.getState().get(retOp));
@@ -112,10 +104,23 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                 }
                 element = new PointerLatticeElement(newstate);
             }
-            if (callString.getlastElement() == returnEdge) {
-                callString.popBack();
-                output.put(callString, element);
-                System.out.println("RETURN UPDATE: " + element);
+            if (callString.size() != 0 && returnEdge.equals(callString.popBack())) {
+                System.out.println(st);
+                System.out.println(callString);
+                System.out.println(getCallers(st, callString.getfrontElement()));
+                List<String> callers = callString.getfrontElement()!= null ? getCallers(st, callString.getfrontElement()) : new ArrayList<String>();
+                // remove @parameter.*
+                element = element.removeFromState();
+                // caller is main itself ...
+                if (callers.size() == 0) {
+                    output.put(callString, element);
+                } else {
+                    for (String caller : callers) {
+                        FixedSizeStack<String> newKey = callString.clone();
+                        newKey.pushFront(caller);
+                        output.put(newKey, element);
+                    }
+                }
             }
         }
 
@@ -208,7 +213,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     }
 
     private List<String> getCallers(Stmt st, String value) {
-        CustomTag t = (CustomTag) st.getTag("CallersTag");
+        CustomTag t = (CustomTag) st.getTag("CallersList");
         return t.getHashMapTag(value);
     }
 
