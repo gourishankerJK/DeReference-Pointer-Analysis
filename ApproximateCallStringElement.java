@@ -10,6 +10,7 @@ import soot.Value;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JReturnStmt;
+import soot.jimple.internal.JReturnVoidStmt;
 import utils.CustomTag;
 import utils.FixedSizeStack;
 
@@ -76,6 +77,9 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
+        if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt) {
+            return handleReturnFn(st);
+        }
         if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
             return handleCallTransferFn(st);
         } else {
@@ -83,7 +87,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         }
     }
 
-    private LatticeElement handleReturnFn(Stmt st, String returnEdge) {
+    private LatticeElement handleReturnFn(Stmt st) {
+        String returnEdge = ((CustomTag) st.getTag("returnEdgeId")).getStringTag();
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
         Map<FixedSizeStack<String>, PointerLatticeElement> output = new HashMap<>();
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
@@ -93,13 +98,17 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                 String retOp = ((JReturnStmt) st).getOp().toString();
 
                 Map<String, HashSet<String>> newstate = element.getState();
-                String varToBeMapped = ((CustomTag) st.getTag("ReturnVars")).getReturnVariable(st.hashCode());
-                if (varToBeMapped != null) {
-                    // handle for null statement
-                    if (retOp != "null") {
-                        newstate.put(varToBeMapped, element.getState().get(retOp));
-                    } else {
-                        newstate.put(varToBeMapped, new HashSet<String>(Arrays.asList("null")));
+
+                CustomTag tag = ((CustomTag) st.getTag("ReturnVars"));
+                if (tag != null) {
+                    String varToBeMapped = tag.getReturnVariable(st.hashCode());
+                    if (varToBeMapped != null) {
+                        // handle for null statement
+                        if (retOp != "null") {
+                            newstate.put(varToBeMapped, element.getState().get(retOp));
+                        } else {
+                            newstate.put(varToBeMapped, new HashSet<String>(Arrays.asList("null")));
+                        }
                     }
                 }
                 element = new PointerLatticeElement(newstate);
@@ -108,7 +117,9 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                 System.out.println(st);
                 System.out.println(callString);
                 System.out.println(getCallers(st, callString.getfrontElement()));
-                List<String> callers = callString.getfrontElement()!= null ? getCallers(st, callString.getfrontElement()) : new ArrayList<String>();
+                List<String> callers = callString.getfrontElement() != null
+                        ? getCallers(st, callString.getfrontElement())
+                        : new ArrayList<String>();
                 // remove @parameter.*
                 element = element.removeFromState();
                 // caller is main itself ...
@@ -215,11 +226,6 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     private List<String> getCallers(Stmt st, String value) {
         CustomTag t = (CustomTag) st.getTag("CallersList");
         return t.getHashMapTag(value);
-    }
-
-    @Override
-    public LatticeElement tf_returnstmt(String Edge, Stmt st) {
-        return handleReturnFn(st, Edge);
     }
 
 }

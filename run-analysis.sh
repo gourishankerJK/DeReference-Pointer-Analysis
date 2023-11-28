@@ -11,7 +11,7 @@ set -e
 
 # XXX you can add / delete / comment / uncomment lines below
 mkdir -p iterations
-./run-analysis-one.sh "./target1-pub" "PubTest"   "PubTest"   "test1"
+./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "f"
 dot -Tsvg callgraph.dot -o callgraph.svg
 
 find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do

@@ -551,11 +551,4 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         }
         return result;
     }
-
-    @Override
-    public LatticeElement tf_returnstmt(String Edge, Stmt st) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'tf_returnstmt'");
-    }
-
 }

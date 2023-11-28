@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import utils.CustomTag;
+
 public class Kildall {
     static List<List<ProgramPoint>> logFactLists = new ArrayList<>();
 
@@ -25,38 +27,25 @@ public class Kildall {
         // Unmark and propagate to the successors
         analysisPoint.setMarkPoint(false);
         List<ProgramPoint> logFact = new ArrayList<>();
-        if (analysisPoint.returnSuccessors.size() != 0) {
-            // if the analysis point is a return point
-            // Case 1: The successor had a call site that was a normal invoke
-            // In this case there is nothing to update for the caller function
-            // Case 2: The successor had a call site that has an assignment
-            // In this case we need to perform strong update.
-            int index = 0;
-            for (ProgramPoint successor : analysisPoint.returnSuccessors) {
-                LatticeElement joinElement = successor.getLatticeElement()
-                        .join_op(analysisPoint.getLatticeElement().tf_returnstmt(analysisPoint.returnEdgeIds.get(index),
-                                analysisPoint.getStmt()));
-                index++;
-                markOrUnmarkProgramPoint(successor, joinElement);
-            }
-        } else {
-            // non-call or return program points
-            for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
-                LatticeElement joinElement;
+        for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
+            LatticeElement joinElement;
 
-                if (analysisPoint.getStmt().branches()) {
-                    joinElement = successor.getLatticeElement()
-                            .join_op(analysisPoint.getLatticeElement().tf_condstmt(i == 1, analysisPoint.getStmt()));
-                } else {
-                    joinElement = successor.getLatticeElement()
-                            .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
+            if (analysisPoint.getStmt().branches()) {
+                joinElement = successor.getLatticeElement()
+                        .join_op(analysisPoint.getLatticeElement().tf_condstmt(i == 1, analysisPoint.getStmt()));
+            } else {
+                if (analysisPoint.returnEdgeIds.size() != 0) {
+                    analysisPoint.getStmt().addTag(new CustomTag("returnEdgeId", analysisPoint.returnEdgeIds.get(i)));
                 }
-                // Unmark the successor nodes based on the previous value
-
-                markOrUnmarkProgramPoint(successor, joinElement);
-                i++;
-                logFact.add(new ProgramPoint(successor.getLatticeElement(), successor.getStmt(), successor.isMarked()));
+                joinElement = successor.getLatticeElement()
+                        .join_op(analysisPoint.getLatticeElement().tf_assignstmt(analysisPoint.getStmt()));
+                analysisPoint.getStmt().removeTag("returnEdgeId");
             }
+            // Unmark the successor nodes based on the previous value
+
+            markOrUnmarkProgramPoint(successor, joinElement);
+            i++;
+            logFact.add(successor.clone());
         }
         logFactLists.add(logFact);
     }
@@ -104,11 +93,12 @@ public class Kildall {
                 if (!pp.callSuccessor.isMarked()) {
                     markred = "";
                 }
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.getMethodName()
-                        + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" +
-                        pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l")
-                        + "\", style=dotted," + markred + "]"
-                        + System.lineSeparator());
+                fileWriter.write(
+                        "\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.getMethodName()
+                                + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" +
+                                pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l")
+                                + "\", style=dotted," + markred + "]"
+                                + System.lineSeparator());
             }
             int k = 0;
             for (ProgramPoint returnPoints : pp.returnSuccessors) {
@@ -116,7 +106,8 @@ public class Kildall {
                 if (!returnPoints.isMarked()) {
                     markred = "";
                 }
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + returnPoints.getMethodName() + " "
+                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \""
+                        + returnPoints.getMethodName() + " "
                         + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\", style=dotted"
                         + markred + "]"
                         + System.lineSeparator());

@@ -23,5 +23,4 @@ interface LatticeElement {
     public LatticeElement tf_assignstmt(Stmt st);
 
     public LatticeElement tf_condstmt(boolean b, Stmt st);
-    public LatticeElement tf_returnstmt(String Edge , Stmt st);
 }

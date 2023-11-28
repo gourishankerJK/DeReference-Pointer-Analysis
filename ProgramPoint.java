@@ -41,10 +41,12 @@ public class ProgramPoint {
     public Stmt getStmt() {
         return statement;
     }
-    public void setMethodName(String methodName){
+
+    public void setMethodName(String methodName) {
         this.methodName = methodName;
     }
-    public String getMethodName(){
+
+    public String getMethodName() {
         return this.methodName;
     }
 
@@ -60,13 +62,15 @@ public class ProgramPoint {
 
     public List<ProgramPoint> getAllSuccessors() {
         List<ProgramPoint> ls = new ArrayList<>();
+        if (this.returnSuccessors.size() != 0) {
+            return this.returnSuccessors;
+        }
         if (callSuccessor != null)
             ls.add(callSuccessor);
         if (this.callEdgeId != null) {
             return ls;
         }
         ls.addAll(successors);
-        ls.addAll(returnSuccessors);
 
         return ls;
     }
@@ -103,5 +107,43 @@ public class ProgramPoint {
         ans += "\nCallEdgeId " + callEdgeId;
         ans += "\n--------------------\n";
         return ans;
+    }
+
+    @Override
+    public ProgramPoint clone() {
+        try {
+            ProgramPoint clonedPoint = (ProgramPoint) super.clone();
+            if (latticeElement != null) {
+                clonedPoint.latticeElement = ((ApproximateCallStringElement) latticeElement).clone();
+            }
+            if (statement != null) {
+                clonedPoint.statement = (Stmt) statement.clone();
+            }
+            if (successors != null) {
+                clonedPoint.successors = new ArrayList<>();
+                for (ProgramPoint successor : successors) {
+                    clonedPoint.successors.add(successor.clone());
+                }
+            }
+            if (callSuccessor != null) {
+                clonedPoint.callSuccessor = callSuccessor.clone();
+            }
+            if (returnSuccessors != null) {
+                clonedPoint.returnSuccessors = new ArrayList<>();
+                for (ProgramPoint returnSuccessor : returnSuccessors) {
+                    clonedPoint.returnSuccessors.add(returnSuccessor.clone());
+                }
+            }
+            clonedPoint.methodName = this.methodName;
+            clonedPoint.className = this.className;
+            clonedPoint.callEdgeId = this.callEdgeId;
+            clonedPoint.markedForPropagation = this.markedForPropagation;
+            clonedPoint.returnEdgeIds = this.returnEdgeIds;
+            // Clone other fields as needed
+            return clonedPoint;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
