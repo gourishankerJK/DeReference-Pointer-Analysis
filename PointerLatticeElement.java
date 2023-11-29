@@ -116,21 +116,20 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     @Override
     public LatticeElement join_op(LatticeElement r) {
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-        HashSet<String> temp = new HashSet<String>();
 
         HashMap<String, HashSet<String>> joinElementState = new HashMap<String, HashSet<String>>();
 
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
-            value.addAll(this.State.getOrDefault(key, temp));
+            value.addAll(this.State.getOrDefault(key, new HashSet<String>()));
             joinElementState.put(key, value);
         }
         for (String key : this.State.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(this.State.get(key));
-            value.addAll(input.getOrDefault(key, temp));
-            joinElementState.getOrDefault(key, temp);
+            value.addAll(input.getOrDefault(key, new HashSet<String>()));
+            joinElementState.getOrDefault(key, new HashSet<String>());
         }
 
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
