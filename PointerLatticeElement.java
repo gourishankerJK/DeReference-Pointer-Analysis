@@ -346,12 +346,13 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     }
 
     public PointerLatticeElement removeFromState(String value) {
-        Map<String, HashSet<String>> st = this.getState();
-        for (Map.Entry<String, HashSet<String>> entry : st.entrySet()) {
+        Map<String, HashSet<String>> st = this.clone().getState();
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
             if (entry.getKey().matches(value)) {
                 st.remove(entry.getKey());
             }
         }
+        
         return new PointerLatticeElement(st);
     }
 

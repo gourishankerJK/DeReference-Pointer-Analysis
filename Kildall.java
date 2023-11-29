@@ -23,8 +23,7 @@ public class Kildall {
         // Need to make normal successor as identity 
         // This is because now we only pass parameters to the function and not the whole state.
         if (analysisPoint.callSuccessor != null) {
-            LatticeElement join = analysisPoint.getSuccessors().get(0)
-                                    .getLatticeElement().join_op(analysisPoint.getLatticeElement());
+            LatticeElement join = analysisPoint.getSuccessors().get(0).getLatticeElement().join_op(analysisPoint.getLatticeElement());
             analysisPoint.getSuccessors().get(0).setLatticeElement(join);
         }
 

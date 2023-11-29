@@ -1,13 +1,17 @@
-TARGETMETHOD=$1
+TARGETMETHOD=${1:-default3}
+DIRECTORY=${2:-target1-pub}
+CLASS=${3:-PubTest}
+
 source environ.sh
 
-echo "Running java -Xms800m -Xmx3g Analysis target1-pub  PubTest  PubTest  "$TARGETMETHOD" test"
+echo "Running java -Xms800m -Xmx3g Analysis $DIRECTORY  $CLASS  $CLASS  "$TARGETMETHOD" test"
 time \
     mkdir -p iterations
   find iterations ! -name '*.pdf' -type f -exec rm -f {} +
-    java -Xms800m -Xmx3g Analysis target1-pub  PubTest  PubTest  "$TARGETMETHOD" test
+    java -Xms800m -Xmx3g Analysis  $DIRECTORY  $CLASS  $CLASS "$TARGETMETHOD" test
 time \
-    ./run-generate-pdf.sh $TARGETMETHOD
+    ./run-generate-pdf.sh $CLASS $TARGETMETHOD 
+    find iterations ! -name '*.pdf' -type f -exec rm -f {} +
 
 #!/bin/bash
 
@@ -19,7 +23,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 RESET='\033[0m'
 
-file_name="PubTest.$TARGETMETHOD.output.txt"
+file_name="$CLASS.$TARGETMETHOD.output.txt"
 # echo "comparing actual-output/$file_name with expected-output/$file_name"
 if [ -e "$source_folder2/$file_name" ]; then
     difference=$(diff "$source_folder1/$file_name" "$source_folder2/$file_name")

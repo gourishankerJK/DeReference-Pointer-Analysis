@@ -1,4 +1,5 @@
-TARGETMETHOD=$1
+TARGETMETHOD=$2
+CLASS=$1
 spinner() {
     local  spinners="/-\|"
     local  delay=0.1  # Adjust the delay value to control the speed of the spinner
@@ -28,6 +29,6 @@ find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
     dot -Tsvg -Gsize="24,24" "$file" -o "$file.svg"
 done
 
-printf "%s\n" iterations/*.svg | sort -t'_' -k2 -n | xargs  rsvg-convert -f pdf -o iterations/"$TARGETMETHOD"FullOutput.pdf
+printf "%s\n" iterations/*.svg | sort -t'_' -k2 -n | xargs  rsvg-convert -f pdf -o iterations/"$CLASS.$TARGETMETHOD."FullOutput.pdf
 printf "\rFiles Generated.......!\n"
 kill "$spinner_pid"
