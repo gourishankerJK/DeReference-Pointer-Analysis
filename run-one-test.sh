@@ -3,7 +3,11 @@ source environ.sh
 
 echo "Running java -Xms800m -Xmx3g Analysis target1-pub  PubTest  PubTest  "$TARGETMETHOD" test"
 time \
+    mkdir -p iterations
+  find iterations ! -name '*.pdf' -type f -exec rm -f {} +
     java -Xms800m -Xmx3g Analysis target1-pub  PubTest  PubTest  "$TARGETMETHOD" test
+time \
+    ./run-generate-pdf.sh $TARGETMETHOD
 
 #!/bin/bash
 
