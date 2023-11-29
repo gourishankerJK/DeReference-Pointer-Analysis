@@ -424,7 +424,8 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     private LatticeElement handleTrueBranchWithNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         // send empty if doesn'operation contain null;
-        if (!this.State.get(value.toString()).contains("null")) {
+        // if set is empty also then we dont know what can be the result.
+        if (!this.State.get(value.toString()).contains("null") && !this.State.get(value.toString()).isEmpty()) {
             for (String key : this.State.keySet()) {
                 result.State.get(key).clear();
             }
