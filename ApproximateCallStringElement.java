@@ -159,7 +159,15 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             newKey.pushBack(getCallId(st));
 
             // Clear all the variables except new00.f format
-            PointerLatticeElement exntedPointerLatticeElement = entry.getValue().getStateWithoutLocalVariables();
+            PointerLatticeElement exntedPointerLatticeElement = new PointerLatticeElement();
+            // Clear all the variables except new00.f format
+            for (Map.Entry<String, HashSet<String>> e : entry.getValue().getState().entrySet()) {
+                if (!e.getKey().contains("::")) {
+                    exntedPointerLatticeElement = exntedPointerLatticeElement.updateState(e.getKey(), e.getValue());
+                } else {
+                    exntedPointerLatticeElement = exntedPointerLatticeElement.updateState(e.getKey(), new HashSet<>());
+                }
+            }
 
             int index = 0;
             for (Value arg : stExpr.getArgs()) {
@@ -167,12 +175,13 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                     HashSet<String> temp = new HashSet<>();
                     temp.addAll(entry.getValue().getState().get(arg.toString()));
                     exntedPointerLatticeElement = exntedPointerLatticeElement
-                            .addToState("@parameter" + index + ": " + arg.getType(), temp);
+                            .updateState("@parameter" + index + ": " + arg.getType(), temp);
 
                 }
                 index++;
             }
-            // If there was no such key before, create a new pointer lattice elemtn in order to join
+            // If there was no such key before, create a new pointer lattice elemtn in order
+            // to join
             if (newState.get(newKey) == null) {
                 newState.put(newKey, exntedPointerLatticeElement);
             }

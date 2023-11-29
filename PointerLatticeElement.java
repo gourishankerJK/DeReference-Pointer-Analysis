@@ -318,21 +318,10 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
      * @param result PointerLatticeElement whose state needs to be cleared
      * @return Cleared PointerLatticeElement
      */
-    public PointerLatticeElement addToState(String value, HashSet<String> parameter) {
+    public PointerLatticeElement updateState(String value, HashSet<String> parameter) {
         Map<String, HashSet<String>> st = getState();
         st.put(value, parameter);
         return new PointerLatticeElement(st);
-    }
-
-    public PointerLatticeElement getStateWithoutLocalVariables() {
-        PointerLatticeElement exntedPointerLatticeElement = this.clone();
-        // Clear all the variables except new00.f format
-        for (Map.Entry<String, HashSet<String>> e : this.getState().entrySet()) {
-            if (e.getKey().contains("::")) {
-                exntedPointerLatticeElement = exntedPointerLatticeElement.removeFromState(e.getKey());
-            }
-        }
-        return exntedPointerLatticeElement;
     }
 
     public PointerLatticeElement removeFromState() {
@@ -352,7 +341,7 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
                 st.remove(entry.getKey());
             }
         }
-        
+
         return new PointerLatticeElement(st);
     }
 
