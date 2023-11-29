@@ -130,7 +130,7 @@ public class ApproximateCallStringPreProcess {
             if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
                 StaticInvokeExpr invokeExpr = (StaticInvokeExpr) stmt.getInvokeExpr();
                 String functionSignature = invokeExpr.getMethod().getSubSignature();
-                String callEdgeId = String.format("%s.%s.in%02d", body.getMethod().getDeclaringClass(),
+                String callEdgeId = String.format("%s.in%02d",
                         body.getMethod().getName(), getLineNumber(stmt));
 
                 // Process this body if not already processed.
@@ -163,12 +163,13 @@ public class ApproximateCallStringPreProcess {
             if (returnProgramPoint.getStmt() instanceof JReturnStmt && unit instanceof JAssignStmt) {
                 String lhs = ((JAssignStmt) unit).getLeftOp().toString();
                 CustomTag returnVarTag = (CustomTag) returnProgramPoint.getStmt().getTag("ReturnVars");
+                // the return site may be to different points, therefore using callEdgeId as the key
                 if (returnVarTag == null) {
-                    returnVarTag = new CustomTag("ReturnVars", returnProgramPoint.getStmt().hashCode(),
-                            lhs);
+                    returnVarTag = new CustomTag("ReturnVars", callEdgeId,
+                            lhs, true);
                     returnProgramPoint.getStmt().addTag(returnVarTag);
                 } else {
-                    returnVarTag.updateReturnVariableMap(returnProgramPoint.getStmt().hashCode(), lhs);
+                    returnVarTag.updateReturnVariableMap(callEdgeId, lhs);
                 }
             }
         }

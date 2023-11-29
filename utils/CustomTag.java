@@ -14,7 +14,7 @@ public class CustomTag implements Tag {
     String name = "CustomTag";
     int lineNumber = 0;
     String stringTag = "Empty";
-    public Map<Integer, String> returnVariableMap;
+    public Map<String, String> returnVariableMap;
 
     public CustomTag(String tagName, Map<String, List<String>> test) {
         this.name = tagName;
@@ -22,7 +22,7 @@ public class CustomTag implements Tag {
 
     }
 
-    public CustomTag(String tagName, int key, String value) {
+    public CustomTag(String tagName, String key, String value, boolean x) {
         this.name = tagName;
         this.returnVariableMap = new HashMap<>();
         this.returnVariableMap.put(key, value);
@@ -56,7 +56,7 @@ public class CustomTag implements Tag {
         }
     }
 
-    public void updateReturnVariableMap(int key, String variable) {
+    public void updateReturnVariableMap(String key, String variable) {
         this.returnVariableMap.put(key, variable);
     }
 
@@ -86,11 +86,11 @@ public class CustomTag implements Tag {
         return this.stringTag;
     }
 
-    public String getReturnVariable(Integer hashCode) {
+    public String getReturnVariable(String hashCode) {
         return returnVariableMap.get(hashCode);
     }
 
-    public Map<Integer, String> getReturnVariableMap() {
+    public Map<String, String> getReturnVariableMap() {
         return this.returnVariableMap;
     }
 
