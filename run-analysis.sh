@@ -38,7 +38,7 @@ rm -rf iterations/*
 ./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "f"
 
 find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
-    dot -Tsvg "$file" -o "$file.svg"
+    dot -Tsvg -Gsize="24,24" "$file" -o "$file.svg"
 done
 
 printf "%s\n" iterations/*.svg | sort -t'_' -k2 -n | xargs  rsvg-convert -f pdf -o iterations/FullOutput.pdf

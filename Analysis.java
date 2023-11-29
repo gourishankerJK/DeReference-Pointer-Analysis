@@ -136,7 +136,8 @@ public class Analysis extends PAVBase {
                 "digraph G { label =\"" + i + "\"node [shape=\"box\"]"
                         + System.lineSeparator());
         fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator());
-
+        String str = "\"%s %s\" -> \"%s %s\" %s%n";
+        String Label = "[label=\"%s\"color=%s style=%s]";
         String currentName = preProcessedBody.get(0).getMethodName();
         for (ProgramPoint pp : preProcessedBody) {
             for (ProgramPoint s : pp.getSuccessors()) {
@@ -147,46 +148,47 @@ public class Analysis extends PAVBase {
                     currentName = pp.getMethodName();
                 }
 
-                String label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\"]";
-                if (s.isMarked()) {
-                    label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\", color=red]";
-                }
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + s.getMethodName() + " "
-                        + s.getStmt() + "\"" + label
-                        + System.lineSeparator());
+                String color = s.isMarked() ? "red" : "black";
+                writeDotFile(fileWriter , Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
+                        "solid",str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
+                        s.getStmt().toString());
+
             }
         }
         fileWriter.write("}" + System.lineSeparator());
         for (ProgramPoint pp : preProcessedBody) {
             if (pp.callSuccessor != null) {
-                String markred = " color=red ";
-                if (!pp.callSuccessor.isMarked()) {
-                    markred = "";
-                }
-                fileWriter.write(
-                        "\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.getMethodName()
-                                + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" +
-                                pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l")
-                                + "\", style=dotted," + markred + "]"
-                                + System.lineSeparator());
+                String color = pp.callSuccessor.isMarked() ? "red" : "black";
+                writeDotFile(fileWriter , Label,
+                        pp.callEdgeId + "\\l\\l" + pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l"),
+                        color, "dashed",str,
+                        pp.getMethodName(), pp.getStmt().toString(), pp.callSuccessor.getMethodName(), pp.callSuccessor.getStmt().toString()
+                         );
             }
+
             int k = 0;
             for (ProgramPoint returnPoints : pp.returnSuccessors) {
-                String markred = " color=red ";
-                if (!returnPoints.isMarked()) {
-                    markred = "";
-                }
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \""
-                        + returnPoints.getMethodName() + " "
-                        + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\", style=dotted"
-                        + markred + "]"
-                        + System.lineSeparator());
-                // returnPoints.getLatticeElement().toString().replace("\n", "\\l")
+                String color = !returnPoints.isMarked() ? "black" : "red";
+                writeDotFile(fileWriter , Label, pp.returnEdgeIds.get(k), color, "dashed",str,
+                        pp.getMethodName(), pp.getStmt().toString(), returnPoints.getMethodName(), returnPoints.getStmt().toString());
                 k++;
             }
         }
         fileWriter.write("}");
         fileWriter.close();
+    }
+
+    public static void writeDotFile(FileWriter fileWriter, String Label, String labelText, String color, String style,
+            String str, String lMethodName, String lStatement, String rMethodName, String rStatement) {
+        String label = String.format(Label, labelText, color, style);
+        String dottedString = String.format(str, lMethodName, lStatement, rMethodName,
+                rStatement, label, System.lineSeparator());
+        try {
+            fileWriter.write(dottedString);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,
