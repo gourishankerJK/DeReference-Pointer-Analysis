@@ -227,7 +227,9 @@ public class Analysis extends PAVBase {
         }
         res += ": {";
         int i = 0;
-        for (String s : p.getValue()) {
+        List<String> sorted = new ArrayList<>(p.getValue());
+        Collections.sort(sorted);
+        for (String s : sorted) {
             i++;
             if (i == p.getValue().size())
                 res += s;
@@ -254,9 +256,8 @@ public class Analysis extends PAVBase {
                             && !p.getKey().matches("@.*")) {
                         String ek = entry.getKey().size() == 0 ? "@"
                                 : entry.getKey().toString();
-                        ans = (baseClass + "." + functionName + ": "
+                        ans = (functionName + ": "
                                 + String.format("in%02d:", getLineNumber(programPoint.getStmt()))
-
                                 + " "
                                 + ek + " => " + formatEntry(p));
                         outputs.add(ans);

@@ -28,11 +28,11 @@ public class PubTest {
     }
 
     static PubTest test2() {
-        PubTest k5 = null;
         PubTest k1 = new PubTest(); // first object
         PubTest k2 = foo2(k1);
         PubTest k3 = new PubTest(); // second object
         PubTest k4 = foo2(k3);
+        PubTest k5 = null;
         // k2 and k4 will point to both objects because the call depth was more than two
         if (k2 == k4) {
             k5 = k2;
@@ -61,6 +61,35 @@ public class PubTest {
     static PubTest bar3(PubTest k6) {
         // due to length bound of two, only one context reaches here.
         // Under this context, k6 can point to first object or second object.
+        return k6;
+    }
+
+    static PubTest test3() {
+        PubTest k8 = new PubTest(); // first object
+        PubTest k9 = baz2(k8);
+        PubTest k10 = new PubTest(); // second object
+        PubTest k11 = baz2(k10);
+        PubTest k12 = null;
+        if (k9 == k11) {
+            k12 = k9;
+        }
+        return k12;
+    }
+
+    static PubTest baz2(PubTest k5) {
+        // two contexts (both of length 1) reach here.
+        // In the first context, k5 points to first object.
+        // In the second context k5 points to second object.
+        PubTest k7 = baz3(k5);
+        // k7 will point to first object in first context,
+        // and will point to second object in second context
+        return k7;
+    }
+
+    static PubTest baz3(PubTest k6) {
+        // two contexts (both of length 2) reach here.
+        // In the first context, k6 points to first object.
+        // In the second context k6 points to second object.
         return k6;
     }
 }
