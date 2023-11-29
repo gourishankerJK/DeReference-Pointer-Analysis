@@ -148,45 +148,33 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
     private LatticeElement handleCallTransferFn(Stmt st) {
         StaticInvokeExpr stExpr = (StaticInvokeExpr) st.getInvokeExpr();
         Map<FixedSizeStack<String>, PointerLatticeElement> curState = this.clone().getState();
-        // Clone it in a separate map, since there can be aliasing like AB, CB can become BD together, we need to join at this point
+        // Clone it in a separate map, since there can be aliasing like AB, CB can
+        // become BD together, we need to join at this point
         Map<FixedSizeStack<String>, PointerLatticeElement> newState = new HashMap<>();
 
         // Extend state with parameters to handle them separately within the function
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
             FixedSizeStack<String> newKey = entry.getKey().clone();
-            String callEdge = getCallId(st);
-            newKey.pushBack(callEdge);
+            // Add the call string
+            newKey.pushBack(getCallId(st));
 
-            int i = 0;
-            PointerLatticeElement exntedPointerLatticeElement = new PointerLatticeElement();
             // Clear all the variables except new00.f format
-            for (Map.Entry<String, HashSet<String>> e : entry.getValue().getState().entrySet()) {
-                if (!e.getKey().contains("::")) {
-                    exntedPointerLatticeElement = exntedPointerLatticeElement.addToState(e.getKey(), e.getValue());
-                } else {
-                    exntedPointerLatticeElement = exntedPointerLatticeElement.addToState(e.getKey(), new HashSet<>());
-                }
-            }
+            PointerLatticeElement exntedPointerLatticeElement = entry.getValue().getStateWithoutLocalVariables();
 
+            int index = 0;
             for (Value arg : stExpr.getArgs()) {
                 if (isReferenceType(arg.getType())) {
-
                     HashSet<String> temp = new HashSet<>();
-                    PointerLatticeElement p = entry.getValue();
-                    temp.addAll(p.getState().get(arg.toString()));
+                    temp.addAll(entry.getValue().getState().get(arg.toString()));
                     exntedPointerLatticeElement = exntedPointerLatticeElement
-                            .addToState("@parameter" + i + ": " + arg.getType(), temp);
+                            .addToState("@parameter" + index + ": " + arg.getType(), temp);
 
                 }
-                i++;
+                index++;
             }
             // If there was no such key before, create a new pointer lattice elemtn in order to join
-            PointerLatticeElement elem = new PointerLatticeElement();
-            for (Map.Entry<String, HashSet<String>> e : exntedPointerLatticeElement.getState().entrySet()) {
-                elem = elem.addToState(e.getKey(), new HashSet<>());
-            }
             if (newState.get(newKey) == null) {
-                newState.put(newKey, elem);
+                newState.put(newKey, exntedPointerLatticeElement);
             }
             newState.put(newKey, (PointerLatticeElement) exntedPointerLatticeElement.join_op(newState.get(newKey)));
         }

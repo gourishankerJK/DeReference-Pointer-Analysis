@@ -325,6 +325,17 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         return new PointerLatticeElement(st);
     }
 
+    public PointerLatticeElement getStateWithoutLocalVariables() {
+        PointerLatticeElement exntedPointerLatticeElement = this.clone();
+        // Clear all the variables except new00.f format
+        for (Map.Entry<String, HashSet<String>> e : this.getState().entrySet()) {
+            if (e.getKey().contains("::")) {
+                exntedPointerLatticeElement = exntedPointerLatticeElement.removeFromState(e.getKey());
+            }
+        }
+        return exntedPointerLatticeElement;
+    }
+
     public PointerLatticeElement removeFromState() {
         Map<String, HashSet<String>> st = this.clone().getState();
         for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
