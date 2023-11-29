@@ -20,6 +20,13 @@ public class Kildall {
             return;
         // Unmark and propagate to the successors
         analysisPoint.setMarkPoint(false);
+        // Need to make normal successor as identity 
+        // This is because now we only pass parameters to the function and not the whole state.
+        if (analysisPoint.callSuccessor != null) {
+            LatticeElement join = analysisPoint.getSuccessors().get(0)
+                                    .getLatticeElement().join_op(analysisPoint.getLatticeElement());
+            analysisPoint.getSuccessors().get(0).setLatticeElement(join);
+        }
 
         for (ProgramPoint successor : analysisPoint.getAllSuccessors()) {
             LatticeElement joinElement;
