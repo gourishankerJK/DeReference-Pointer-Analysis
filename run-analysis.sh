@@ -34,13 +34,14 @@ trap cleanup EXIT
 spinner & spinner_pid=$! 
  sleep 0.5
 mkdir -p iterations
+rm -rf iterations/*
 ./run-analysis-one.sh "./target2-mine" "BasicTest"   "BasicTest"   "f"
 
-find . -name "iterations/*.dot" -print0 | while IFS="" read -r -d "" file; do
+find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
     dot -Tsvg "$file" -o "$file.svg"
 done
 
-printf "%s\n" iterations/*.svg | sort -t'_' -k2 -n | xargs  rsvg-convert -f pdf -o iterations/iterations.pdf
+printf "%s\n" iterations/*.svg | sort -t'_' -k2 -n | xargs  rsvg-convert -f pdf -o iterations/FullOutput.pdf
 printf "\rFiles Generated.......!\n"
 kill "$spinner_pid"
 
