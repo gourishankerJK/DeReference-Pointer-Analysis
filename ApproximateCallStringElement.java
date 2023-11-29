@@ -114,9 +114,6 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                 element = new PointerLatticeElement(newstate);
             }
             if (callString.size() != 0 && returnEdge.equals(callString.popBack())) {
-                System.out.println(st);
-                System.out.println(callString);
-                System.out.println(getCallers(st, callString.getfrontElement()));
                 List<String> callers = callString.getfrontElement() != null
                         ? getCallers(st, callString.getfrontElement())
                         : new ArrayList<String>();

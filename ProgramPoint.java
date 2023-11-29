@@ -1,12 +1,14 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import soot.jimple.Stmt;
 
 /**
  * A class to hold the program point abstraction
  */
-public class ProgramPoint {
+public class ProgramPoint implements Cloneable {
     private LatticeElement latticeElement;
     private Stmt statement;
     private boolean markedForPropagation;
@@ -17,6 +19,12 @@ public class ProgramPoint {
     public String callEdgeId;
     public List<ProgramPoint> returnSuccessors;
     public List<String> returnEdgeIds;
+
+    public ProgramPoint() {
+        this.returnEdgeIds = new ArrayList<>();
+        this.returnSuccessors = new ArrayList<>();
+        this.successors = new ArrayList<>();
+    }
 
     public ProgramPoint(LatticeElement latticeElement, Stmt stmt, boolean markedForPropagation) {
         ApproximateCallStringElement s = (ApproximateCallStringElement) latticeElement;
@@ -110,40 +118,26 @@ public class ProgramPoint {
     }
 
     @Override
-    public ProgramPoint clone() {
-        try {
-            ProgramPoint clonedPoint = (ProgramPoint) super.clone();
-            if (latticeElement != null) {
-                clonedPoint.latticeElement = ((ApproximateCallStringElement) latticeElement).clone();
-            }
-            if (statement != null) {
-                clonedPoint.statement = (Stmt) statement.clone();
-            }
-            if (successors != null) {
-                clonedPoint.successors = new ArrayList<>();
-                for (ProgramPoint successor : successors) {
-                    clonedPoint.successors.add(successor.clone());
-                }
-            }
-            if (callSuccessor != null) {
-                clonedPoint.callSuccessor = callSuccessor.clone();
-            }
-            if (returnSuccessors != null) {
-                clonedPoint.returnSuccessors = new ArrayList<>();
-                for (ProgramPoint returnSuccessor : returnSuccessors) {
-                    clonedPoint.returnSuccessors.add(returnSuccessor.clone());
-                }
-            }
-            clonedPoint.methodName = this.methodName;
-            clonedPoint.className = this.className;
-            clonedPoint.callEdgeId = this.callEdgeId;
-            clonedPoint.markedForPropagation = this.markedForPropagation;
-            clonedPoint.returnEdgeIds = this.returnEdgeIds;
-            // Clone other fields as needed
-            return clonedPoint;
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public Object clone() throws CloneNotSupportedException {
+        ProgramPoint cloned = (ProgramPoint) super.clone();
+
+        // Copy values of instance variables
+        cloned.latticeElement = ((ApproximateCallStringElement) this.latticeElement).clone();
+        cloned.statement = this.statement;
+        cloned.markedForPropagation = this.markedForPropagation;
+        cloned.methodName = this.methodName;
+        cloned.className = this.className;
+        cloned.callEdgeId = this.callEdgeId;
+        // Copy returnEdgeIds list
+        cloned.returnEdgeIds = new ArrayList<>(this.returnEdgeIds);
+        // Handle successors
+        cloned.successors = new ArrayList<>(this.successors);
+        // Handle callSuccessor
+        cloned.callSuccessor = this.callSuccessor;
+        // Handle returnSuccessors
+        cloned.returnSuccessors = new ArrayList<>(this.returnSuccessors);
+
+        return cloned;
     }
+
 }

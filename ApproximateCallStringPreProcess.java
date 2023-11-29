@@ -30,7 +30,6 @@ public class ApproximateCallStringPreProcess {
         List<ProgramPoint> result = _preProcess(body, variables);
         Map<String, List<String>> callersList = getCallersList(result);
         tagCallerListToReturnUnit(result, callersList);
-        System.out.println("whoIsCallingMap: " + callersList);
         return result;
     }
 
@@ -197,7 +196,7 @@ public class ApproximateCallStringPreProcess {
                 IdentityStmt identityStmt = (IdentityStmt) unit;
                 Value leftValue = identityStmt.getLeftOp();
                 if (leftValue instanceof Local) {
-                    changeName((Local) leftValue, functionName);
+                    addScopeOfFunction((Local) leftValue, functionName);
                 }
             } else if (unit instanceof AssignStmt) {
                 AssignStmt stmt = (AssignStmt) unit;
@@ -205,17 +204,17 @@ public class ApproximateCallStringPreProcess {
                 Value rightValue = stmt.getRightOp();
 
                 if (leftValue instanceof Local) {
-                    changeName((Local) leftValue, functionName);
+                    addScopeOfFunction((Local) leftValue, functionName);
                 }
                 if (rightValue instanceof Local) {
-                    changeName((Local) rightValue, functionName);
+                    addScopeOfFunction((Local) rightValue, functionName);
 
                 }
             }
         }
     }
 
-    private void changeName(Local local, String functionName) {
+    private void addScopeOfFunction(Local local, String functionName) {
         String oldName = local.getName();
         String newVariableName = functionName + "::" + oldName;
         if (!oldName.contains("::"))

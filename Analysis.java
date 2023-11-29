@@ -31,6 +31,10 @@ import utils.CustomTag;
 import utils.FixedSizeStack;
 
 public class Analysis extends PAVBase {
+    static String targetDirectory;
+    static String mClass;
+    static String tClass;
+    static String tMethod;
 
     public Analysis() {
         /*************************************************************
@@ -43,10 +47,10 @@ public class Analysis extends PAVBase {
             System.out.println(
                     "Incorrect usage, usage format: java Analysis <targetDirectory> <mainClass> <targetClass> <targetMethod>");
         }
-        String targetDirectory = args[0];
-        String mClass = args[1];
-        String tClass = args[2];
-        String tMethod = args[3];
+        targetDirectory = args[0];
+        mClass = args[1];
+        tClass = args[2];
+        tMethod = args[3];
         String mode = "";
         try {
             mode = args[4];
@@ -94,83 +98,90 @@ public class Analysis extends PAVBase {
         }
 
         if (methodFound) {
-            printInfo(targetMethod);
-            /*************************************************************
-             * XXX This would be a good place to call the function
-             * which performs the Kildalls iterations over the LatticeElement.
-             *************************************************************/
             // Preprocess for the pointer lattice element
-            List<ProgramPoint> preProcessedBody = (new ApproximateCallStringPreProcess())
-                    .PreProcess(targetMethod.retrieveActiveBody());
-
-            // Compute Least fix point using Kildall's algorithms
-
-            List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
-
-            List<String> output = formatResult(result.get(0), targetDirectory, tClass, tMethod);
-            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, output);
-            System.out.println("Final output written in "
-                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
-            for (int i = 1; i < result.size(); i++) {
-                writeResultToFile(i, targetDirectory, tClass, tMethod, mode,
-                        formatResult(result.get(i), targetDirectory, tClass, tMethod));
-            }
-            writeResultToFile(10, targetDirectory, tClass, tMethod, mode, output);
-            System.out.println("Logs of kildall written in "
-                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass,
-                            tMethod));
-            MakeInterProceduralGraph(result.get(0));
-            drawMethodDependenceGraph(targetMethod);
+            Kildall.ComputeLFP((new ApproximateCallStringPreProcess()).PreProcess(targetMethod.retrieveActiveBody()));
         } else {
             System.out.println("Method not found: " + tMethod);
         }
     }
 
-    private static void MakeInterProceduralGraph(List<ProgramPoint> preProcessedBody) throws IOException {
+    public static void formatAndWriteToFile(List<ProgramPoint> p, boolean finalResult, int logIndex) {
+        List<String> result = formatResult(p, targetDirectory, tClass, tMethod);
+        try {
+            writeResultToFile(logIndex, targetDirectory, tClass, tMethod, mClass, result);
 
-        FileWriter fileWriter = new FileWriter(String.format("./callgraph.dot"));
+            if (finalResult) {
+                System.out.println(
+                        String.format("Logs of kildall written in %s/%s.%s.fulloutput.txt",
+                                targetDirectory, tClass,
+                                tMethod));
+                writeResultToFile(0, targetDirectory, tClass, tMethod, mClass, result);
+
+                System.out.println(
+                        String.format("Final output written in%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
+            }
+            MakeInterProceduralGraph(p, logIndex);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void MakeInterProceduralGraph(List<ProgramPoint> preProcessedBody, Integer i) throws IOException {
+
+        FileWriter fileWriter = new FileWriter(String.format("./iterations/callgraph_" + i.toString() + ".dot"));
         int j = 0;
-        Random random = new Random();
-        fileWriter.write("digraph G { node [shape=\"Mrectangle\"]" + System.lineSeparator());
+        fileWriter.write(
+                "digraph G { label =\"" + i + "\"node [shape=\"box\"]"
+                        + System.lineSeparator());
         fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator());
-        String[] bgColors = {
-                "red",
-                "green",
-                "yellow",
-                "orange",
-                "purple",
-                "pink",
-                "brown",
-                "aqua"
-        };
 
         String currentName = preProcessedBody.get(0).getMethodName();
         for (ProgramPoint pp : preProcessedBody) {
             for (ProgramPoint s : pp.getSuccessors()) {
                 if (pp.getMethodName() != currentName) {
-                    int index = random.nextInt(bgColors.length);
                     fileWriter.write(
                             "}" + "subgraph cluster_" + j++ + " {"
                                     + System.lineSeparator());
                     currentName = pp.getMethodName();
                 }
+
+                String label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\"]";
+                if (s.isMarked()) {
+                    label = "[ label=\"" + s.getLatticeElement().toString().replace("\n", "\\l") + "\", color=red]";
+                }
                 fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + s.getMethodName() + " "
-                        + s.getStmt() + "\"" + "[ label=\"" + s.getLatticeElement().toString() + "\"]"
+                        + s.getStmt() + "\"" + label
                         + System.lineSeparator());
             }
         }
         fileWriter.write("}" + System.lineSeparator());
         for (ProgramPoint pp : preProcessedBody) {
             if (pp.callSuccessor != null) {
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.getMethodName()
-                        + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\", style=dotted ]"
-                        + System.lineSeparator());
+                String markred = " color=red ";
+                if (!pp.callSuccessor.isMarked()) {
+                    markred = "";
+                }
+                fileWriter.write(
+                        "\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + pp.callSuccessor.getMethodName()
+                                + " " + pp.callSuccessor.getStmt() + "\"" + "[ label=\"" + pp.callEdgeId + "\n" +
+                                pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l")
+                                + "\", style=dotted," + markred + "]"
+                                + System.lineSeparator());
             }
             int k = 0;
             for (ProgramPoint returnPoints : pp.returnSuccessors) {
-                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \"" + returnPoints.getMethodName() + " "
-                        + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\", style=dotted ]"
+                String markred = " color=red ";
+                if (!returnPoints.isMarked()) {
+                    markred = "";
+                }
+                fileWriter.write("\"" + pp.getMethodName() + " " + pp.getStmt() + "\" -> \""
+                        + returnPoints.getMethodName() + " "
+                        + returnPoints.getStmt() + "\"" + "[ label=\"" + pp.returnEdgeIds.get(k) + "\", style=dotted"
+                        + markred + "]"
                         + System.lineSeparator());
+                // returnPoints.getLatticeElement().toString().replace("\n", "\\l")
                 k++;
             }
         }
@@ -193,7 +204,6 @@ public class Analysis extends PAVBase {
                         logIndex > 1);
             }
             for (String str : output) {
-                System.out.println(str);
                 fileWriter.write(str + System.lineSeparator());
             }
             if (logIndex >= 1)
@@ -239,7 +249,6 @@ public class Analysis extends PAVBase {
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
                     String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
                     String functionName = ((CustomTag) programPoint.getStmt().getTag("functionName")).getStringTag();
-                    System.out.println(functionName + " "+ programPoint.getStmt() +" |" + programPoint.getMethodName());
                     if (p.getValue().size() != 0
                             && (p.getKey().matches(functionName + ".*") || !p.getKey().matches(".*::.*"))
                             && !p.getKey().matches("@.*")) {
@@ -258,7 +267,6 @@ public class Analysis extends PAVBase {
         Collections.sort(outputs);
         return outputs;
     }
-
 
     private static void drawMethodDependenceGraph(SootMethod entryMethod) {
         if (!entryMethod.isPhantom() && entryMethod.isConcrete()) {
