@@ -250,8 +250,8 @@ public class Analysis extends PAVBase {
             Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
             for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+                if ( entry.getValue()!=null)
                 for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
-                    String baseClass = ((CustomTag) programPoint.getStmt().getTag("baseClass")).getStringTag();
                     String functionName = ((CustomTag) programPoint.getStmt().getTag("functionName")).getStringTag();
                     if (p.getValue().size() != 0
                             && (p.getKey().matches(functionName + ".*") || !p.getKey().matches(".*::.*"))

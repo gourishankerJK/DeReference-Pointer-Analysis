@@ -93,11 +93,36 @@ public class PubTest {
         return k6;
     }
 
-    static void mytest() {
+    static void infRec() {
         PubTest v2 = new PubTest();
         v2.f = new PubTest();
-         mytest();
+         infRec();
 
         return ;
+    }
+
+    static PubTest doubleInfRec1(PubTest p) {
+        PubTest x = new PubTest();
+        PubTest y = doubleInfRec2(x);
+        return y;
+    }
+
+    static PubTest doubleInfRec2(PubTest p) {
+
+        PubTest y = doubleInfRec1(p);
+        return y;
+    }
+
+    static void condTest() {
+        PubTest n1 = fn();
+        PubTest n2 = fn();
+        if (n1 == n2) {
+            n1 = new PubTest();
+        } else {
+            n2 = new PubTest();
+        }
+    }
+    static PubTest fn() {
+        return null;
     }
 }
