@@ -92,4 +92,12 @@ public class PubTest {
         // In the second context k6 points to second object.
         return k6;
     }
+
+    static PubTest mytest(PubTest v1) {
+        PubTest v2 = new PubTest();
+        v2.f = new PubTest();
+        v2.f.f = mytest(v1);
+
+        return new PubTest();
+    }
 }

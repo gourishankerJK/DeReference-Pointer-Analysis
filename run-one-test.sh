@@ -6,6 +6,7 @@ source environ.sh
 
 echo "Running java -Xms800m -Xmx3g Analysis $DIRECTORY  $CLASS  $CLASS  "$TARGETMETHOD" test"
 time \
+    make
     mkdir -p iterations
   find iterations ! -name '*.pdf' -type f -exec rm -f {} +
    find $DIRECTORY ! -name '*.java' '*.class' -type f -exec rm -f {} +
@@ -22,6 +23,7 @@ source_folder2="expected-output"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+Yellow='\033[0;33m' 
 RESET='\033[0m'
 
 file_name="$CLASS.$TARGETMETHOD.output.txt"
@@ -36,6 +38,5 @@ if [ -e "$source_folder2/$file_name" ]; then
         echo "$difference${RESET}"
     fi
 else
-    echo "File does not exist in $source_folder2"
+    echo "${Yellow}Testing file does not exist in $source_folder2${RESET}"
 fi
-
