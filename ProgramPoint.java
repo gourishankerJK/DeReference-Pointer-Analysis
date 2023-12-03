@@ -19,6 +19,7 @@ public class ProgramPoint implements Cloneable {
     public String callEdgeId;
     public List<ProgramPoint> returnSuccessors;
     public List<String> returnEdgeIds;
+    public boolean InfiniteLoop;
 
     public ProgramPoint() {
         this.returnEdgeIds = new ArrayList<>();
@@ -34,6 +35,7 @@ public class ProgramPoint implements Cloneable {
         this.markedForPropagation = markedForPropagation;
         this.returnEdgeIds = new ArrayList<>();
         this.returnSuccessors = new ArrayList<>();
+        this.InfiniteLoop = false;
     }
 
     public LatticeElement getLatticeElement() {

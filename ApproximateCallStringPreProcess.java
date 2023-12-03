@@ -92,7 +92,9 @@ public class ApproximateCallStringPreProcess {
         int lineno = 0;
         // Initial pass to create list of program points, this loop is needed to track
         // the line numbers
+        boolean InfiniteLoop = true;
         for (Unit unit : body.getUnits()) {
+            Stmt stmt = (Stmt) unit;
             unit.addTag(new CustomTag("lineNumberTag", lineno++));
             unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
             unit.addTag(new CustomTag("functionName", body.getMethod().getName()));
@@ -103,6 +105,13 @@ public class ApproximateCallStringPreProcess {
 
             programPoint.setMethodName(body.getMethod().getName());
             programPoint.className = body.getMethod().getDeclaringClass().toString();
+
+            if (stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt)
+                InfiniteLoop = false;
+            if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
+                if (stmt.getInvokeExpr().getMethod().equals(body.getMethod()) && InfiniteLoop)
+                    programPoint.InfiniteLoop = true;
+            }
 
             unitToProgramPoint.put(unit, programPoint);
             result.add(programPoint);
@@ -163,7 +172,8 @@ public class ApproximateCallStringPreProcess {
             if (returnProgramPoint.getStmt() instanceof JReturnStmt && unit instanceof JAssignStmt) {
                 String lhs = ((JAssignStmt) unit).getLeftOp().toString();
                 CustomTag returnVarTag = (CustomTag) returnProgramPoint.getStmt().getTag("ReturnVars");
-                // the return site may be to different points, therefore using callEdgeId as the key
+                // the return site may be to different points, therefore using callEdgeId as the
+                // key
                 if (returnVarTag == null) {
                     returnVarTag = new CustomTag("ReturnVars", callEdgeId,
                             lhs, true);

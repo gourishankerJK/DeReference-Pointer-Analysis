@@ -93,11 +93,11 @@ public class PubTest {
         return k6;
     }
 
-    static PubTest mytest(PubTest v1) {
+    static void mytest() {
         PubTest v2 = new PubTest();
         v2.f = new PubTest();
-        v2.f.f = mytest(v1);
+         mytest();
 
-        return new PubTest();
+        return ;
     }
 }
