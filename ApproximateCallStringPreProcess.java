@@ -28,7 +28,7 @@ public class ApproximateCallStringPreProcess {
 
     public List<ProgramPoint> PreProcess(Body body) {
         List<String> variables = gatherVariablesList(body);
-        List<ProgramPoint> result = _preProcess(body, variables);
+        List<ProgramPoint> result = _preProcess(body, variables, body.getMethod().getName());
         Map<String, List<String>> callersList = getCallersList(result);
         checkForInfiniteLoops(body);
         tagCallerListToReturnUnit(result, callersList);
@@ -126,7 +126,7 @@ public class ApproximateCallStringPreProcess {
         return variables;
     }
 
-    private List<ProgramPoint> _preProcess(Body body, List<String> variables) {
+    private List<ProgramPoint> _preProcess(Body body, List<String> variables, String MethodName) {
 
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
 
@@ -141,7 +141,7 @@ public class ApproximateCallStringPreProcess {
             unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
             unit.addTag(new CustomTag("functionName", body.getMethod().getName()));
             ProgramPoint programPoint = new ProgramPoint(
-                    new ApproximateCallStringElement(variables),
+                    MethodName!=null ? new ApproximateCallStringElement(variables) : new ApproximateCallStringElement(),
                     (Stmt) unit,
                     true);
 
@@ -189,7 +189,7 @@ public class ApproximateCallStringPreProcess {
                 // Process this body if not already processed.
                 if (!functionCallMap.containsKey(functionSignature)) {
                     List<ProgramPoint> newBody = _preProcess(invokeExpr.getMethod().retrieveActiveBody(),
-                            variables);
+                            variables, null);
                     result.addAll(newBody);
                 }
                 unitToProgramPoint.get(unit).callSuccessor = (functionCallMap.get(functionSignature));
