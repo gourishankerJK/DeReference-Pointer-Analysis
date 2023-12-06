@@ -22,15 +22,57 @@ import utils.CustomTag;
 
 public class ApproximateCallStringPreProcess {
     private HashSet<String> visited = new HashSet<>();
-    private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
+    private  Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
+    private HashMap<Unit, ProgramPoint> unitToProgramPoint = new HashMap<>();
 
     public List<ProgramPoint> PreProcess(Body body) {
         List<String> variables = gatherVariablesList(body);
         List<ProgramPoint> result = _preProcess(body, variables);
         Map<String, List<String>> callersList = getCallersList(result);
+        checkForInfiniteLoops(body);
         tagCallerListToReturnUnit(result, callersList);
+        for (Map.Entry<Unit, ProgramPoint> entry : unitToProgramPoint.entrySet()) {
+            if (entry.getValue().InfiniteLoop) {
+                System.out.println(entry.getKey() + " |" + entry.getValue().getStmt());
+            }
+
+        }
         return result;
+    }
+
+    private void checkForInfiniteLoops(Body body) {
+        HashSet<Unit> isUnitVisited = new HashSet<>();
+        _checkForInfiniteLoops(body, isUnitVisited);
+    }
+
+    private Boolean _checkForInfiniteLoops(Body body, HashSet<Unit> isUnitVisited) {
+        System.out.println(body.getUnits().isEmpty());
+        for (Unit unit : body.getUnits()) {
+            Stmt st = (Stmt) unit;
+            if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt)
+                return false;
+            else {
+                if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
+                    if (!isUnitVisited.contains(unit)) {
+                        isUnitVisited.add(unit);
+                        if (_checkForInfiniteLoops(st.getInvokeExpr().getMethod().retrieveActiveBody(),
+                                isUnitVisited)) {
+                            unitToProgramPoint.get(unit).InfiniteLoop = true;
+                            isUnitVisited.remove(unit);
+                            return true;
+                        }
+                        isUnitVisited.remove(unit);
+
+                    } else {
+                        unitToProgramPoint.get(unit).InfiniteLoop = true;
+                        isUnitVisited.remove(unit);
+                        return true;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private Map<String, List<String>> getCallersList(List<ProgramPoint> body) {
@@ -87,7 +129,7 @@ public class ApproximateCallStringPreProcess {
     private List<ProgramPoint> _preProcess(Body body, List<String> variables) {
 
         List<ProgramPoint> result = new ArrayList<ProgramPoint>();
-        HashMap<Unit, ProgramPoint> unitToProgramPoint = new HashMap<>();
+
         ExceptionalUnitGraph graph = new ExceptionalUnitGraph(body);
         int lineno = 0;
         // Initial pass to create list of program points, this loop is needed to track
@@ -106,12 +148,14 @@ public class ApproximateCallStringPreProcess {
             programPoint.setMethodName(body.getMethod().getName());
             programPoint.className = body.getMethod().getDeclaringClass().toString();
 
-            if (stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt)
-                InfiniteLoop = false;
-            if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof StaticInvokeExpr) {
-                if (stmt.getInvokeExpr().getMethod().equals(body.getMethod()) && InfiniteLoop)
-                    programPoint.InfiniteLoop = true;
-            }
+            // if (stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt)
+            // InfiniteLoop = false;
+            // if (stmt.containsInvokeExpr() && stmt.getInvokeExpr() instanceof
+            // StaticInvokeExpr) {
+            // if (stmt.getInvokeExpr().getMethod().equals(body.getMethod()) &&
+            // InfiniteLoop)
+            // programPoint.InfiniteLoop = true;
+            // }
 
             unitToProgramPoint.put(unit, programPoint);
             result.add(programPoint);

@@ -1,0 +1,45 @@
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+
+rec2: in01: @ => $r0: {rec2.new00}
+rec2: in02: @ => $r0: {rec2.new00}
+

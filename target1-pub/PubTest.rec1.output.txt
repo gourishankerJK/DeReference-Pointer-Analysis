@@ -1,0 +1,2 @@
+rec1: in01: @ => $r0: {rec1.new00}
+rec1: in02: @ => $r0: {rec1.new00}

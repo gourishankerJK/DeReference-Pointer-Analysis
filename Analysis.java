@@ -149,6 +149,7 @@ public class Analysis extends PAVBase {
                 }
 
                 String color = s.isMarked() ? "red" : "black";
+                 if(pp.InfiniteLoop) color = "purple";
                 writeDotFile(fileWriter , Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
                         "solid",str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
                         s.getStmt().toString());

@@ -96,8 +96,34 @@ public class PubTest {
     static void mytest() {
         PubTest v2 = new PubTest();
         v2.f = new PubTest();
-         mytest();
+        mytest();
 
-        return ;
+        return;
+    }
+
+    static void rec1() {
+        PubTest v1 = new PubTest();
+        rec2();
+        rec3();
+
+    }
+
+    private static PubTest rec2() {
+
+        PubTest v2 = new PubTest();
+        rec3();
+        return v2;
+
+    }
+    static void rec3() {
+        PubTest v1 = new PubTest();
+        rec2();
+        rec1();
+
+    }
+     static void rec4() {
+        PubTest v1 = new PubTest();
+        rec1();;
+
     }
 }
