@@ -9,20 +9,25 @@ import soot.Body;
 import soot.Local;
 import soot.RefType;
 import soot.Unit;
+import soot.UnitPatchingChain;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.SwitchStmt;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JReturnStmt;
 import soot.jimple.internal.JReturnVoidStmt;
+import soot.toolkits.graph.Block;
+import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import utils.CustomTag;
 
 public class ApproximateCallStringPreProcess {
     private HashSet<String> visited = new HashSet<>();
-    private  Map<String, ProgramPoint> functionCallMap = new HashMap<>();
+    private Map<String, ProgramPoint> functionCallMap = new HashMap<>();
     private Map<String, List<ProgramPoint>> functionReturnMap = new HashMap<>();
     private HashMap<Unit, ProgramPoint> unitToProgramPoint = new HashMap<>();
 
@@ -43,21 +48,71 @@ public class ApproximateCallStringPreProcess {
 
     private void checkForInfiniteLoops(Body body) {
         HashSet<Unit> isUnitVisited = new HashSet<>();
-        _checkForInfiniteLoops(body, isUnitVisited);
+        HashSet<Unit> isUnitStVisited = new HashSet<>();
+        ExceptionalUnitGraph cfg = new ExceptionalUnitGraph(body);
+        _checkForInfiniteLoops(makeList(body), cfg, isUnitVisited, isUnitStVisited, 0);
     }
 
-    private Boolean _checkForInfiniteLoops(Body body, HashSet<Unit> isUnitVisited) {
-        System.out.println(body.getUnits().isEmpty());
-        for (Unit unit : body.getUnits()) {
+    private List<Unit> makeList(Body body) {
+        return new ArrayList<>(body.getUnits());
+
+    }
+
+    private Boolean isParentCondtional(Unit test, ExceptionalUnitGraph cfg) {
+        Boolean flag = false;
+        for (Unit currentUnit : cfg) {
+            // Check if the current unit is the unit of interest
+            System.out.println("123" + test);
+            if (currentUnit.equals(test)) {
+                // Get the predecessors of the parent unit
+                
+                List<Unit> preds = cfg.getPredsOf(currentUnit);
+                for (Unit parentUnit  : preds) {
+                    System.out.println(parentUnit);
+                    // Check if the parent unit is a conditional statement
+                    if (parentUnit instanceof IfStmt || parentUnit instanceof SwitchStmt) {
+                        flag =  true;
+                        break;
+                    }
+                }
+
+                break;
+            }
+        }
+        System.out.println("---");
+        return flag;
+    }
+
+    private Boolean _checkForInfiniteLoops(List<Unit> units, ExceptionalUnitGraph cfg, HashSet<Unit> isUnitVisited,
+            HashSet<Unit> isUnitStVisited,
+            int i) {
+
+        for (int j = i; j < units.size(); j++) {
+            Unit unit = units.get(j);
             Stmt st = (Stmt) unit;
+            if (st instanceof IfStmt)
+                System.out.println(((IfStmt) st).getTarget());
             if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt)
                 return false;
             else {
-                if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
+
+                if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr
+                        && !isParentCondtional(st, cfg)) {
+                    // jth statement is not recursive
+                    if (!isUnitStVisited.contains(unit)) {
+                        isUnitStVisited.add(unit);
+                        _checkForInfiniteLoops(units, cfg, isUnitVisited, isUnitStVisited, j + 1);
+                        // isUnitStVisited.remove(unit);
+
+                    }
+
+                    // jth statement is recursive
                     if (!isUnitVisited.contains(unit)) {
+
                         isUnitVisited.add(unit);
-                        if (_checkForInfiniteLoops(st.getInvokeExpr().getMethod().retrieveActiveBody(),
-                                isUnitVisited)) {
+                        Body body = st.getInvokeExpr().getMethod().retrieveActiveBody();
+                        if (_checkForInfiniteLoops(makeList(body), new ExceptionalUnitGraph(body),
+                                isUnitVisited, isUnitStVisited, 0)) {
                             unitToProgramPoint.get(unit).InfiniteLoop = true;
                             isUnitVisited.remove(unit);
                             return true;
@@ -69,10 +124,12 @@ public class ApproximateCallStringPreProcess {
                         isUnitVisited.remove(unit);
                         return true;
                     }
+
                 }
             }
         }
         return true;
+
     }
 
     private Map<String, List<String>> getCallersList(List<ProgramPoint> body) {
@@ -141,7 +198,8 @@ public class ApproximateCallStringPreProcess {
             unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
             unit.addTag(new CustomTag("functionName", body.getMethod().getName()));
             ProgramPoint programPoint = new ProgramPoint(
-                    MethodName!=null ? new ApproximateCallStringElement(variables) : new ApproximateCallStringElement(),
+                    MethodName != null ? new ApproximateCallStringElement(variables)
+                            : new ApproximateCallStringElement(),
                     (Stmt) unit,
                     true);
 

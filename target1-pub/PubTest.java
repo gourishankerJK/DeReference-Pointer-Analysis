@@ -102,8 +102,9 @@ public class PubTest {
 
     static void rec1() {
         PubTest v1 = new PubTest();
+        rec1();
+        rec1();
         rec2();
-        rec3();
 
     }
 
@@ -111,19 +112,25 @@ public class PubTest {
 
         PubTest v2 = new PubTest();
         rec3();
+        rec2();
         return v2;
 
     }
     static void rec3() {
         PubTest v1 = new PubTest();
-        rec2();
-        rec1();
+        if(v1.f == null){
+            v1 = new PubTest();
+            v1 = new PubTest();
+            v1 = new PubTest();
+            v1.f = v1;
+            rec3();
+        }
+        return;
 
     }
      static void rec4() {
         PubTest v1 = new PubTest();
-        rec1();;
-         infRec();
+        rec1();
 
     }
 
