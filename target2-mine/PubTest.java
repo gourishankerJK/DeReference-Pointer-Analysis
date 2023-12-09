@@ -241,4 +241,38 @@ public class PubTest {
         return new PubTest();
 
     }
+
+    static PubTest test104_rec_ifelse(PubTest p1) {
+        int x = 32;
+        if (p1 != null) {
+            for (int i = 0; i < x; i++) {
+                x++;
+                x = 43;
+                test104_rec_ifelse(p1);
+            }
+        } else {
+            for (int i = 0; i < 2; i++) {
+                x++;
+
+            }
+            test104_rec_ifelse(p1);
+
+        }
+        return p1;
+    }
+
+    static PubTest test104_rec_switch(PubTest p1) {
+        int x = 32;
+        switch (x) {
+            case 1:
+                x++;
+                x = 43;
+                test104_rec_switch(p1);
+                break;
+            case 2:
+                test104_rec_switch(p1);
+                break;
+        }
+        return p1;
+    }
 }
