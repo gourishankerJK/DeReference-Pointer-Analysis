@@ -1,18 +1,40 @@
+
+pdf=true
+while getopts ":p" opt; do
+    case $opt in
+        p)
+            # Set the pdf variable to true
+            pdf=false
+            ;;
+        \?)
+            # Handle unrecognized options
+            echo "Invalid option: -$OPTARG"
+            ;;
+    esac
+done
+
+# Shift the command-line arguments to exclude the processed options
+shift $((OPTIND - 1))
 TARGETMETHOD=${1:-default3}
 DIRECTORY=${2:-target1-pub}
 CLASS=${3:-PubTest}
+
+
+# Check the value of pdf variable
 
 source environ.sh
 
 echo "Running java -Xms800m -Xmx3g Analysis $DIRECTORY  $CLASS  $CLASS  "$TARGETMETHOD" test"
 time \
-    make
+     make
     mkdir -p iterations
-  find iterations ! -name '*.pdf' -type f -exec rm -f {} +
-   find $DIRECTORY ! -name '*.java' '*.class' -type f -exec rm -f {} +
+     find iterations ! -name '*.pdf' -type f -exec rm -f {} +
+     find $DIRECTORY -type f ! -name '*.java' ! -name '*.class' -exec rm -f {} +
     java -Xms800m -Xmx3g Analysis  $DIRECTORY  $CLASS  $CLASS "$TARGETMETHOD" test
 time \
+if [ "$pdf" = true ]; then
     ./run-generate-pdf.sh $CLASS $TARGETMETHOD 
+fi
     find iterations ! -name '*.pdf' -type f -exec rm -f {} +
 
 #!/bin/bash

@@ -37,12 +37,6 @@ public class ApproximateCallStringPreProcess {
         Map<String, List<String>> callersList = getCallersList(result);
         checkForInfiniteLoops(body);
         tagCallerListToReturnUnit(result, callersList);
-        for (Map.Entry<Unit, ProgramPoint> entry : unitToProgramPoint.entrySet()) {
-            if (entry.getValue().InfiniteLoop) {
-                System.out.println(entry.getKey() + " |" + entry.getValue().getStmt());
-            }
-
-        }
         return result;
     }
 
@@ -50,7 +44,7 @@ public class ApproximateCallStringPreProcess {
         HashSet<Unit> isUnitVisited = new HashSet<>();
         HashSet<Unit> isUnitStVisited = new HashSet<>();
         ExceptionalUnitGraph cfg = new ExceptionalUnitGraph(body);
-        _checkForInfiniteLoops(makeList(body), cfg, isUnitVisited, isUnitStVisited, 0);
+       _checkForInfiniteLoops(makeList(body), cfg, isUnitVisited, isUnitStVisited, 0);
     }
 
     private List<Unit> makeList(Body body) {
@@ -62,13 +56,11 @@ public class ApproximateCallStringPreProcess {
         Boolean flag = false;
         for (Unit currentUnit : cfg) {
             // Check if the current unit is the unit of interest
-            System.out.println("123" + test);
             if (currentUnit.equals(test)) {
                 // Get the predecessors of the parent unit
                 
                 List<Unit> preds = cfg.getPredsOf(currentUnit);
                 for (Unit parentUnit  : preds) {
-                    System.out.println(parentUnit);
                     // Check if the parent unit is a conditional statement
                     if (parentUnit instanceof IfStmt || parentUnit instanceof SwitchStmt) {
                         flag =  true;
@@ -79,7 +71,6 @@ public class ApproximateCallStringPreProcess {
                 break;
             }
         }
-        System.out.println("---");
         return flag;
     }
 
@@ -90,8 +81,6 @@ public class ApproximateCallStringPreProcess {
         for (int j = i; j < units.size(); j++) {
             Unit unit = units.get(j);
             Stmt st = (Stmt) unit;
-            if (st instanceof IfStmt)
-                System.out.println(((IfStmt) st).getTarget());
             if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt)
                 return false;
             else {
@@ -191,9 +180,7 @@ public class ApproximateCallStringPreProcess {
         int lineno = 0;
         // Initial pass to create list of program points, this loop is needed to track
         // the line numbers
-        boolean InfiniteLoop = true;
         for (Unit unit : body.getUnits()) {
-            Stmt stmt = (Stmt) unit;
             unit.addTag(new CustomTag("lineNumberTag", lineno++));
             unit.addTag(new CustomTag("baseClass", body.getMethod().getDeclaringClass().toString()));
             unit.addTag(new CustomTag("functionName", body.getMethod().getName()));

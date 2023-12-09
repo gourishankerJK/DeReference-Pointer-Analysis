@@ -35,7 +35,7 @@ set -e
 #  sleep 0.5
 # mkdir -p iterations
 # rm -rf iterations/*
-# ./run-analysis-one.sh "./target1-pub" "PubTest"   "PubTest"   "test2"
+# ./run-analysis-one.sh "./target1-pub" "PubTest"   "PubTest"   "test22"
 
 # find . -name "*.dot" -print0 | while IFS="" read -r -d "" file; do
 #     dot -Tsvg -Gsize="24,24" "$file" -o "$file.svg"

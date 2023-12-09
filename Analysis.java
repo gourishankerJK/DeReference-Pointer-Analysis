@@ -149,9 +149,10 @@ public class Analysis extends PAVBase {
                 }
 
                 String color = s.isMarked() ? "red" : "black";
-                 if(pp.InfiniteLoop) color = "purple";
-                writeDotFile(fileWriter , Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
-                        "solid",str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
+                if (pp.InfiniteLoop)
+                    color = "purple";
+                writeDotFile(fileWriter, Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
+                        "solid", str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
                         s.getStmt().toString());
 
             }
@@ -160,18 +161,19 @@ public class Analysis extends PAVBase {
         for (ProgramPoint pp : preProcessedBody) {
             if (pp.callSuccessor != null) {
                 String color = pp.callSuccessor.isMarked() ? "red" : "black";
-                writeDotFile(fileWriter , Label,
+                writeDotFile(fileWriter, Label,
                         pp.callEdgeId + "\\l\\l" + pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l"),
-                        color, "dashed",str,
-                        pp.getMethodName(), pp.getStmt().toString(), pp.callSuccessor.getMethodName(), pp.callSuccessor.getStmt().toString()
-                         );
+                        color, "dashed", str,
+                        pp.getMethodName(), pp.getStmt().toString(), pp.callSuccessor.getMethodName(),
+                        pp.callSuccessor.getStmt().toString());
             }
 
             int k = 0;
             for (ProgramPoint returnPoints : pp.returnSuccessors) {
-                String color = !returnPoints.isMarked() ? "black" : "red";
-                writeDotFile(fileWriter , Label, pp.returnEdgeIds.get(k), color, "dashed",str,
-                        pp.getMethodName(), pp.getStmt().toString(), returnPoints.getMethodName(), returnPoints.getStmt().toString());
+                String color = returnPoints.isMarked() ? "red" : "black";
+                writeDotFile(fileWriter, Label, pp.returnEdgeIds.get(k), color, "dashed", str,
+                        pp.getMethodName(), pp.getStmt().toString(), returnPoints.getMethodName(),
+                        returnPoints.getStmt().toString());
                 k++;
             }
         }
@@ -251,21 +253,22 @@ public class Analysis extends PAVBase {
             Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
                     .getLatticeElement()).getState();
             for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
-                if ( entry.getValue()!=null)
-                for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
-                    String functionName = ((CustomTag) programPoint.getStmt().getTag("functionName")).getStringTag();
-                    if (p.getValue().size() != 0
-                            && (p.getKey().matches(functionName + ".*") || !p.getKey().matches(".*::.*"))
-                            && !p.getKey().matches("@.*")) {
-                        String ek = entry.getKey().size() == 0 ? "@"
-                                : entry.getKey().toString();
-                        ans = (functionName + ": "
-                                + String.format("in%02d:", getLineNumber(programPoint.getStmt()))
-                                + " "
-                                + ek + " => " + formatEntry(p));
-                        outputs.add(ans);
+                if (entry.getValue() != null)
+                    for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
+                        String functionName = ((CustomTag) programPoint.getStmt().getTag("functionName"))
+                                .getStringTag();
+                        if (p.getValue().size() != 0
+                                && (p.getKey().matches(functionName + "::.*") || !p.getKey().matches(".*::.*"))
+                                && !p.getKey().matches("@.*")) {
+                            String ek = entry.getKey().size() == 0 ? "@"
+                                    : entry.getKey().toString();
+                            ans = (functionName + ": "
+                                    + String.format("in%02d:", getLineNumber(programPoint.getStmt()))
+                                    + " "
+                                    + ek + " => " + formatEntry(p));
+                            outputs.add(ans);
+                        }
                     }
-                }
             }
         }
         Collections.sort(outputs);
