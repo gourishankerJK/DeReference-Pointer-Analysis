@@ -44,7 +44,7 @@ public class ApproximateCallStringPreProcess {
         HashSet<Unit> isUnitVisited = new HashSet<>();
         HashSet<Unit> isUnitStVisited = new HashSet<>();
         ExceptionalUnitGraph cfg = new ExceptionalUnitGraph(body);
-       _checkForInfiniteLoops(makeList(body), cfg, isUnitVisited, isUnitStVisited, 0);
+        _checkForInfiniteLoops(makeList(body), cfg, isUnitVisited, isUnitStVisited, 0);
     }
 
     private List<Unit> makeList(Body body) {
@@ -53,22 +53,22 @@ public class ApproximateCallStringPreProcess {
     }
 
     private Boolean isParentCondtional(Unit test, ExceptionalUnitGraph cfg) {
-        Boolean flag = false;
-        for (Unit currentUnit : cfg) {
-            // Check if the current unit is the unit of interest
-            if (currentUnit.equals(test)) {
-                // Get the predecessors of the parent unit
-                
-                List<Unit> preds = cfg.getPredsOf(currentUnit);
-                for (Unit parentUnit  : preds) {
-                    // Check if the parent unit is a conditional statement
-                    if (parentUnit instanceof IfStmt || parentUnit instanceof SwitchStmt) {
-                        flag =  true;
-                        break;
+        Boolean flag = false, f = true;
+        for (Unit oldUnit : cfg) {
+            if (oldUnit instanceof IfStmt) {
+                IfStmt ifOld = (IfStmt) oldUnit;
+                Unit ifTarget = (Unit) ifOld.getTarget();
+                for (Unit currUnit : cfg) {
+                    if (currUnit.equals(oldUnit) && f) {
+                        f = false;
+                    } else {
+                        if (currUnit.equals(ifTarget)) {
+                            return false;
+                        } else if (currUnit.equals(test)) {
+                            return true;
+                        }
                     }
                 }
-
-                break;
             }
         }
         return flag;
@@ -84,8 +84,7 @@ public class ApproximateCallStringPreProcess {
             if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt)
                 return false;
             else {
-                if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr
-                        && !isParentCondtional(st, cfg)) {
+                if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr) {
                     // jth statement is not recursive
                     if (!isUnitStVisited.contains(unit)) {
                         isUnitStVisited.add(unit);
@@ -93,7 +92,8 @@ public class ApproximateCallStringPreProcess {
                         // isUnitStVisited.remove(unit);
 
                     }
-
+                    if (isParentCondtional(st, cfg))
+                        return false;
                     // jth statement is recursive
                     if (!isUnitVisited.contains(unit)) {
 

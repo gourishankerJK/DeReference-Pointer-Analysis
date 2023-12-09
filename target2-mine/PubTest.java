@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class PubTest {
     PubTest f;
 
@@ -143,31 +146,99 @@ public class PubTest {
     public static void test23() {
         PubTest a = new PubTest();
         PubTest b = new PubTest();
-     
+
         a.f = null;
         b.f = null;
-     
-        PubTest t =new PubTest();
-     
+
+        PubTest t = new PubTest();
+
         testP(a);
-     
-        t =a.f;
-     
+
+        t = a.f;
+
         System.out.println("t: " + t);
     }
-     
+
     public static void testP(PubTest a) {
         if (a.f != null) {
             a.f = a;
             testP(a);
             a.f = a;
             PubTest t = a.f;
-     
+
         } else {
-            a.f=a;
+            a.f = a;
             return;
         }
     }
 
-    
+    static PubTest test101_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test101_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        return new PubTest();
+
+    }
+
+    static PubTest test102_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        test101_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        return new PubTest();
+
+    }
+
+    static PubTest test103_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        for (int i = 0; i < -1; i++) {
+
+            test102_rec(p1, x, x,
+                    new ArrayList<PubTest>());
+
+            test101_rec(p1, x, x,
+                    new ArrayList<PubTest>());
+
+        }
+
+        return new PubTest();
+
+    }
 }
