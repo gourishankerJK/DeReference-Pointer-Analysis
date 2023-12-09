@@ -119,6 +119,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
                 FixedSizeStack<String> callString = entry.getKey().clone();
                 PointerLatticeElement element = entry.getValue().clone();
+                String varToBeMapped="";
                 if (st instanceof JReturnStmt) {
                     String retOp = ((JReturnStmt) st).getOp().toString();
 
@@ -126,8 +127,9 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
                     CustomTag tag = ((CustomTag) st.getTag("ReturnVars"));
                     if (tag != null) {
-                        String varToBeMapped = tag.getReturnVariable(returnEdge);
+                         varToBeMapped = tag.getReturnVariable(returnEdge);
                         if (varToBeMapped != null) {
+                            varToBeMapped = tag.getReturnVariable(returnEdge);
                             if (retOp != "null") {
                                 // handle for null statement
                                 newstate.put(varToBeMapped, element.getState().get(retOp));
@@ -145,6 +147,9 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                             : new ArrayList<String>();
                     // remove @parameter.*
                     element = element.removeFromState();
+                    String functionName = ((CustomTag) st.getTag("functionName")).getStringTag();
+                    element = element.removeUnwantedReturnVariables(functionName, varToBeMapped);
+
                     // caller is main itself ...
                     if (callers.size() == 0) {
                         output.put(callString, element);
@@ -182,12 +187,12 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
         // Extend state with parameters to handle them separately within the function
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
-            if (entry.getValue()!=null) {
-                
+            if (entry.getValue() != null) {
+
                 FixedSizeStack<String> newKey = entry.getKey().clone();
                 // Add the call string
                 newKey.pushBack(getCallId(st));
-    
+
                 // Clear all the variables except new00.f format
                 PointerLatticeElement exntedPointerLatticeElement = new PointerLatticeElement();
                 // Clear all the variables except new00.f format
@@ -195,10 +200,11 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                     if (!e.getKey().contains("::")) {
                         exntedPointerLatticeElement = exntedPointerLatticeElement.updateState(e.getKey(), e.getValue());
                     } else {
-                        exntedPointerLatticeElement = exntedPointerLatticeElement.updateState(e.getKey(), new HashSet<>());
+                        exntedPointerLatticeElement = exntedPointerLatticeElement.updateState(e.getKey(),
+                                new HashSet<>());
                     }
                 }
-    
+
                 int index = 0;
                 for (Value arg : stExpr.getArgs()) {
                     if (isReferenceType(arg.getType())) {
@@ -206,7 +212,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                         temp.addAll(entry.getValue().getState().get(arg.toString()));
                         exntedPointerLatticeElement = exntedPointerLatticeElement
                                 .updateState("@parameter" + index + ": " + arg.getType(), temp);
-    
+
                     }
                     index++;
                 }
