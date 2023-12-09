@@ -63,7 +63,22 @@ public class ApproximateCallStringPreProcess {
                         f = false;
                     } else {
                         if (currUnit.equals(ifTarget)) {
-                            return false;
+                            break;
+                        } else if (currUnit.equals(test)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+             else if (oldUnit instanceof SwitchStmt) {
+                SwitchStmt ifOld = (SwitchStmt) oldUnit;
+                Unit ifTarget = (Unit) ifOld.getDefaultTarget();
+                for (Unit currUnit : cfg) {
+                    if (currUnit.equals(oldUnit) && f) {
+                        f = false;
+                    } else {
+                        if (currUnit.equals(ifTarget)) {
+                            break;
                         } else if (currUnit.equals(test)) {
                             return true;
                         }

@@ -143,7 +143,7 @@ public class PubTest {
 
     }
 
-    public static void test23() {
+    public static void test25() {
         PubTest a = new PubTest();
         PubTest b = new PubTest();
 
@@ -268,11 +268,33 @@ public class PubTest {
                 x++;
                 x = 43;
                 test104_rec_switch(p1);
-                break;
             case 2:
                 test104_rec_switch(p1);
-                break;
+            default:
+                PubTest t = new PubTest();
+                t.f = null;
+                test104_rec_switch(t);
         }
         return p1;
     }
+    static void test23(int x) {
+        PubTest v1 = new PubTest();
+        if (x <= 10) {
+            v1.f = new PubTest();
+            check_rec(null, null);
+            v1.f = new PubTest();
+        } else {
+            v1.f = new PubTest();
+            check_rec(new PubTest(), null);
+            v1.f = new PubTest();
+        }
+    }
+
+    static void check_rec(PubTest v1, PubTest v2) {
+        if (v1 == v2) {
+            check_rec(v1, v2);
+        }
+        return;
+    }
+
 }
