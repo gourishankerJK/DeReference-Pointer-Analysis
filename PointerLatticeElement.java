@@ -334,11 +334,11 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         return new PointerLatticeElement(st);
     }
 
-    public PointerLatticeElement removeFromState(String value) {
+    public PointerLatticeElement removeUnwantedReturnVariables(String returnStmtFname, String varToBeMapped) {
         Map<String, HashSet<String>> st = this.clone().getState();
         for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
-            if (entry.getKey().matches(value)) {
-                st.remove(entry.getKey());
+            if ((entry.getKey().contains(returnStmtFname) && entry.getKey().contains("::") ) && entry.getKey()!=varToBeMapped) {
+                st.put(entry.getKey(), new HashSet<>());
             }
         }
 

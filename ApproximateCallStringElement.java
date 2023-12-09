@@ -116,7 +116,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
         Map<FixedSizeStack<String>, PointerLatticeElement> output = new HashMap<>();
         for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : curState.entrySet()) {
             if (entry.getValue() != null) {
-
+        String varToBeMapped = "";
                 FixedSizeStack<String> callString = entry.getKey().clone();
                 PointerLatticeElement element = entry.getValue().clone();
                 if (st instanceof JReturnStmt) {
@@ -126,7 +126,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
                     CustomTag tag = ((CustomTag) st.getTag("ReturnVars"));
                     if (tag != null) {
-                        String varToBeMapped = tag.getReturnVariable(returnEdge);
+                        varToBeMapped = tag.getReturnVariable(returnEdge);
                         if (varToBeMapped != null) {
                             if (retOp != "null") {
                                 // handle for null statement
@@ -145,6 +145,8 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                             : new ArrayList<String>();
                     // remove @parameter.*
                     element = element.removeFromState();
+                    String functionName = ((CustomTag) st.getTag("functionName")).getStringTag();
+                    element = element.removeUnwantedReturnVariables(functionName, varToBeMapped);
                     // caller is main itself ...
                     if (callers.size() == 0) {
                         output.put(callString, element);
