@@ -63,7 +63,7 @@ public class ApproximateCallStringPreProcess {
                         f = false;
                     } else {
                         if (currUnit.equals(ifTarget)) {
-                            return false;
+                            break;
                         } else if (currUnit.equals(test)) {
                             return true;
                         }
