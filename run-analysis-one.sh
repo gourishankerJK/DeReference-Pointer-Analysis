@@ -35,7 +35,6 @@ time \
     java -Xms800m -Xmx3g Analysis "$DIRNAME"  "$MAINCLASS"  "$TARGETCLASS"  "$TARGETMETHOD"
 
 
-dot -Tpng -o cfg.png cfg.dot
 
 
 errstatus=0

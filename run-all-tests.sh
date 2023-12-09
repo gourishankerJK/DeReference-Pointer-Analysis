@@ -1,6 +1,7 @@
-./run-one-test.sh fun3
-./run-one-test.sh fun4
-./run-one-test.sh fun5
-./run-one-test.sh fun6
-./run-one-test.sh conditional_check
-./run-one-test.sh assign_check
+./run-one-test.sh -p test1
+./run-one-test.sh -p test2
+./run-one-test.sh -p test3
+./run-one-test.sh -p test22 target2-mine PubTest
+./run-one-test.sh -p test21 target2-mine PubTest
+./run-one-test.sh -p test17 target2-mine PubTest
+./run-one-test.sh -p test18 target2-mine PubTest

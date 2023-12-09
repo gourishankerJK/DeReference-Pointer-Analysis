@@ -1,15 +1,54 @@
 public class BasicTest {
     BasicTest f, g;
 
-    static public BasicTest f() {
+    static public void f() {
+        BasicTest x = REC_TEST_1(new BasicTest());
+        x.f = null;
+        // v1.f = new BasicTest();
+
+    }
+
+    static public void fa(BasicTest v1) {
+        // rec_test(new BasicTest());
+        // v1.f = new BasicTest();
+        fa(v1);
+    }
+
+    static public BasicTest rec_test(BasicTest v1) {
+        BasicTest n = new BasicTest();
+        rec_test_2(v1);
+        if (n.f == v1) {
+            return n.f;
+        } else {
+            v1.f = null;
+            return n;
+        }
+    }
+
+    static public BasicTest REC_TEST_1(BasicTest v1) {
+        BasicTest n = new BasicTest();
+        rec_test_2(v1);
+        return n;
+    }
+
+    static public BasicTest rec_test_2(BasicTest v1) {
+        BasicTest x = new BasicTest();
+        if (v1.f != null) return null;
+        rec_test_2(x);
+        return x;
+    }
+
+    static public BasicTest g(BasicTest v1) {
+        v1.f = new BasicTest();
+        v1 = new BasicTest();
         return new BasicTest();
     }
 
-    public BasicTest g() {
+    static public BasicTest g(BasicTest v1, int j, BasicTest v2, int i) {
         return new BasicTest();
     }
 
-    static BasicTest SizeOneNULLTest() {
+    static BasicTest SizeOneNULLTest(BasicTest v) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         BasicTest v3 = new BasicTest();
@@ -17,6 +56,7 @@ public class BasicTest {
         v2.f = v3;
         v1.f = v2.f;
         v1 = v3.f;
+        g(v1);
         return v1;
     }
 
@@ -41,6 +81,7 @@ public class BasicTest {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
         v2.f = v1;
+        g(v1);
     }
 
     public static void conditional_check() {
@@ -77,15 +118,46 @@ public class BasicTest {
 
     }
 
+    static void nullify(BasicTest x) {
+        x.f = null;
+        x.g = null;
+        nullify(x);
+        return;
+    }
+
+    static boolean conditional(BasicTest x, BasicTest y) {
+        return x.f == y.f;
+    }
+
+    static int multipleReturn(BasicTest x) {
+        if (conditional(x, null)) {
+            x.f = null;
+            return 0;
+        } else {
+            return 3;
+        }
+    }
+
     static void fun3(int value) {
         BasicTest v1 = new BasicTest();
         BasicTest v2 = new BasicTest();
-        v2.f = v2;
-        if (value <= 100) {
-            v2.f = v1;
-        } else
+        if (conditional(v1, v2)) {
             v2.f = null;
+        } else {
+            v2.f = v1;
+        }
+        nullify(v1);
+        nullify(v2);
+        multipleReturn(v2);
         // Situation 4 partially -- union for an object field
+    }
+
+    static void doubleRec2(BasicTest x) {
+        doubleRec1(x);
+    }
+
+    static void doubleRec1(BasicTest x) {
+        doubleRec2(x);
     }
 
     static void fun4(int value) {

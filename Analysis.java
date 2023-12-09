@@ -9,12 +9,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 import java.io.FileWriter;
 import java.io.IOException;
+////////////////////////////////////////////////////////////////////////////////
 import java.util.*;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 import soot.options.Options;
-import soot.tagkit.Tag;
 import soot.Unit;
 import soot.Scene;
 import soot.Body;
@@ -27,10 +27,14 @@ import soot.NormalUnitPrinter;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.util.cfgcmd.CFGToDotGraph;
 import soot.util.dot.DotGraph;
-
-////////////////////////////////////////////////////////////////////////////////
+import utils.CustomTag;
+import utils.FixedSizeStack;
 
 public class Analysis extends PAVBase {
+    static String targetDirectory;
+    static String mClass;
+    static String tClass;
+    static String tMethod;
 
     public Analysis() {
         /*************************************************************
@@ -43,10 +47,10 @@ public class Analysis extends PAVBase {
             System.out.println(
                     "Incorrect usage, usage format: java Analysis <targetDirectory> <mainClass> <targetClass> <targetMethod>");
         }
-        String targetDirectory = args[0];
-        String mClass = args[1];
-        String tClass = args[2];
-        String tMethod = args[3];
+        targetDirectory = args[0];
+        mClass = args[1];
+        tClass = args[2];
+        tMethod = args[3];
         String mode = "";
         try {
             mode = args[4];
@@ -83,7 +87,7 @@ public class Analysis extends PAVBase {
         System.out.println("tclass: " + targetClass);
         System.out.println("tmethod: " + targetMethod);
         System.out.println("tmethodname: " + tMethod);
-        Iterator mi = targetClass.getMethods().iterator();
+        Iterator<SootMethod> mi = targetClass.getMethods().iterator();
         while (mi.hasNext()) {
             SootMethod sm = (SootMethod) mi.next();
             // System.out.println("method: " + sm);
@@ -94,39 +98,105 @@ public class Analysis extends PAVBase {
         }
 
         if (methodFound) {
-            printInfo(targetMethod);
-            /*************************************************************
-             * XXX This would be a good place to call the function
-             * which performs the Kildalls iterations over the LatticeElement.
-             *************************************************************/
             // Preprocess for the pointer lattice element
-            IPreProcess preProcess = new PointerLatticePreProcess();
-            List<ProgramPoint> preProcessedBody = preProcess.PreProcess(targetMethod.retrieveActiveBody());
-
-            // Compute Least fix point using Kildall's algorithms
-            List<List<ProgramPoint>> result = Kildall.ComputeLFP(preProcessedBody);
-            // Format the data according to required output
-            writeResultToFile(0, targetDirectory, tClass, tMethod, mode, result.get(0));
-            System.out.println("Final output written in "
-                    + String.format("%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
-            for (int i = 1; i < result.size(); i++) {
-                writeResultToFile(i, targetDirectory, tClass, tMethod, mode, result.get(i));
-            }
-             writeResultToFile(10, targetDirectory, tClass, tMethod, mode, result.get(0));
-            System.out.println("Logs of kildall written in "
-                    + String.format("%s/%s.%s.fulloutput.txt", targetDirectory, tClass, tMethod));
-
-            drawMethodDependenceGraph(targetMethod);
+            Kildall.ComputeLFP((new ApproximateCallStringPreProcess()).PreProcess(targetMethod.retrieveActiveBody()));
         } else {
             System.out.println("Method not found: " + tMethod);
         }
     }
 
+    public static void formatAndWriteToFile(List<ProgramPoint> p, boolean finalResult, int logIndex) {
+        List<String> result = formatResult(p, targetDirectory, tClass, tMethod);
+        try {
+            writeResultToFile(logIndex, targetDirectory, tClass, tMethod, mClass, result);
+
+            if (finalResult) {
+                System.out.println(
+                        String.format("Logs of kildall written in %s/%s.%s.fulloutput.txt",
+                                targetDirectory, tClass,
+                                tMethod));
+                writeResultToFile(0, targetDirectory, tClass, tMethod, mClass, result);
+
+                System.out.println(
+                        String.format("Final output written in%s/%s.%s.output.txt", targetDirectory, tClass, tMethod));
+            }
+            MakeInterProceduralGraph(p, logIndex);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void MakeInterProceduralGraph(List<ProgramPoint> preProcessedBody, Integer i) throws IOException {
+
+        FileWriter fileWriter = new FileWriter(String.format("./iterations/callgraph_" + i.toString() + ".dot"));
+        int j = 0;
+        fileWriter.write(
+                "digraph G { label =\"" + i + "\"node [shape=\"box\"]"
+                        + System.lineSeparator());
+        fileWriter.write("subgraph cluster_" + j++ + " {" + System.lineSeparator());
+        String str = "\"%s %s\" -> \"%s %s\" %s%n";
+        String Label = "[label=\"%s\"color=%s style=%s]";
+        String currentName = preProcessedBody.get(0).getMethodName();
+        for (ProgramPoint pp : preProcessedBody) {
+            for (ProgramPoint s : pp.getSuccessors()) {
+                if (pp.getMethodName() != currentName) {
+                    fileWriter.write(
+                            "}" + "subgraph cluster_" + j++ + " {"
+                                    + System.lineSeparator());
+                    currentName = pp.getMethodName();
+                }
+
+                String color = s.isMarked() ? "red" : "black";
+                if (pp.InfiniteLoop)
+                    color = "purple";
+                writeDotFile(fileWriter, Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
+                        "solid", str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
+                        s.getStmt().toString());
+
+            }
+        }
+        fileWriter.write("}" + System.lineSeparator());
+        for (ProgramPoint pp : preProcessedBody) {
+            if (pp.callSuccessor != null) {
+                String color = pp.callSuccessor.isMarked() ? "red" : "black";
+                writeDotFile(fileWriter, Label,
+                        pp.callEdgeId + "\\l\\l" + pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l"),
+                        color, "dashed", str,
+                        pp.getMethodName(), pp.getStmt().toString(), pp.callSuccessor.getMethodName(),
+                        pp.callSuccessor.getStmt().toString());
+            }
+
+            int k = 0;
+            for (ProgramPoint returnPoints : pp.returnSuccessors) {
+                String color = returnPoints.isMarked() ? "red" : "black";
+                writeDotFile(fileWriter, Label, pp.returnEdgeIds.get(k), color, "dashed", str,
+                        pp.getMethodName(), pp.getStmt().toString(), returnPoints.getMethodName(),
+                        returnPoints.getStmt().toString());
+                k++;
+            }
+        }
+        fileWriter.write("}");
+        fileWriter.close();
+    }
+
+    public static void writeDotFile(FileWriter fileWriter, String Label, String labelText, String color, String style,
+            String str, String lMethodName, String lStatement, String rMethodName, String rStatement) {
+        String label = String.format(Label, labelText, color, style);
+        String dottedString = String.format(str, lMethodName, lStatement, rMethodName,
+                rStatement, label, System.lineSeparator());
+        try {
+            fileWriter.write(dottedString);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
     private static void writeResultToFile(int logIndex, String directory, String tClass, String tMethod, String mode,
-            List<ProgramPoint> result)
+            List<String> output)
             throws IOException {
-        Set<ResultTuple> resultFormatted = getFormattedResult(result, tMethod);
-        String[] output = fmtOutputData(resultFormatted, tClass + ".");
         FileWriter fileWriter;
         String type = logIndex != 0 ? "fulloutput" : "output";
         try {
@@ -149,24 +219,60 @@ public class Analysis extends PAVBase {
         }
     }
 
-    private static Set<ResultTuple> getFormattedResult(List<ProgramPoint> result, String method) {
-        Set<ResultTuple> resultFormatted = new HashSet<ResultTuple>();
-        for (ProgramPoint programPoint : result) {
-            Map<String, HashSet<String>> state = ((PointerLatticeElement) programPoint.getLatticeElement()).getState();
-            for (String key : state.keySet()) {
-                if (state.get(key).size() == 0)
-                    continue;
+    private static int getLineNumber(Stmt st) {
+        return ((CustomTag) st.getTag("lineNumberTag")).getLineNumber();
+    }
 
-                List<String> varList = new ArrayList<String>(state.get(key));
-                Collections.sort(varList);
-                List<Tag> tags = programPoint.getStmt().getTags();
-                ResultTuple tuple = new ResultTuple(method,
-                        String.format("in%02d", Integer.parseInt(tags.get(tags.size() - 1).toString())), key, varList);
-                resultFormatted.add(tuple);
+    private static String formatEntry(Map.Entry<String, HashSet<String>> p) {
+        String res = "";
+        if (p.getKey().contains("::")) {
+            res += p.getKey().split("::")[1];
+        } else {
+            res += p.getKey();
+        }
+        res += ": {";
+        int i = 0;
+        List<String> sorted = new ArrayList<>(p.getValue());
+        Collections.sort(sorted);
+        for (String s : sorted) {
+            i++;
+            if (i == p.getValue().size())
+                res += s;
+            else
+                res += s + ", ";
+        }
+        res += "}";
+        return res;
+    }
+
+    private static List<String> formatResult(List<ProgramPoint> result, String directory, String tClass,
+            String tMethod) {
+        String ans = "";
+        List<String> outputs = new ArrayList<String>();
+        for (ProgramPoint programPoint : result) {
+            Map<FixedSizeStack<String>, PointerLatticeElement> superState = ((ApproximateCallStringElement) programPoint
+                    .getLatticeElement()).getState();
+            for (Map.Entry<FixedSizeStack<String>, PointerLatticeElement> entry : superState.entrySet()) {
+                if (entry.getValue() != null)
+                    for (Map.Entry<String, HashSet<String>> p : entry.getValue().getState().entrySet()) {
+                        String functionName = ((CustomTag) programPoint.getStmt().getTag("functionName"))
+                                .getStringTag();
+                        if (p.getValue().size() != 0
+                                && (p.getKey().matches(functionName + "::.*") || !p.getKey().matches(".*::.*"))
+                                && !p.getKey().matches("@.*")) {
+                            String ek = entry.getKey().size() == 0 ? "@"
+                                    : entry.getKey().toString();
+                            ans = (functionName + ": "
+                                    + String.format("in%02d:", getLineNumber(programPoint.getStmt()))
+                                    + " "
+                                    + ek + " => " + formatEntry(p));
+                            outputs.add(ans);
+                        }
+                    }
             }
         }
-
-        return resultFormatted;
+        Collections.sort(outputs);
+        return outputs;
     }
 
     private static void drawMethodDependenceGraph(SootMethod entryMethod) {

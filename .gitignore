@@ -28,3 +28,5 @@ replay_pid*
 TestLattice.java
 *.dot
 actual-output/
+
+iterations/

@@ -10,79 +10,126 @@ import soot.jimple.NeExpr;
 import soot.jimple.NullConstant;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
+import soot.jimple.internal.JIdentityStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JStaticInvokeExpr;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
-import soot.tagkit.Tag;
+import utils.CustomTag;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
-public class PointerLatticeElement implements LatticeElement {
+public class PointerLatticeElement implements LatticeElement, Cloneable {
     private Map<String, HashSet<String>> State;
 
     public PointerLatticeElement() {
-        this.State = new TreeMap<String, HashSet<String>>();
+        this.State = new HashMap<String, HashSet<String>>();
     }
 
     public PointerLatticeElement(List<String> variables) {
-        this.State = new TreeMap<>();
+        this.State = new HashMap<>();
         for (String variable : variables) {
             this.State.put(variable, new HashSet<>());
         }
     }
 
     public PointerLatticeElement(Map<String, HashSet<String>> state) {
-        TreeMap<String, HashSet<String>> newState = new TreeMap<String, HashSet<String>>();
+        HashMap<String, HashSet<String>> newState = new HashMap<String, HashSet<String>>();
         for (String key : state.keySet()) {
             HashSet<String> value = new HashSet<String>();
-            value.addAll(new HashSet<>(state.get(key)));
+            if (state.get(key) != null)
+                value.addAll(new HashSet<>(state.get(key)));
             newState.put(key, value);
         }
         this.State = newState;
     }
 
     public Map<String, HashSet<String>> getState() {
-
         return new PointerLatticeElement(this.State).State;
     }
 
-    public void printState() {
-        for (String key : this.State.keySet()) {
-            System.out.print(key + " :");
-            System.out.println(this.State.get(key).toString());
+    @Override
+    public PointerLatticeElement clone() {
+        try {
+            PointerLatticeElement clonedElement = (PointerLatticeElement) super.clone();
+            clonedElement.State = new HashMap<>(this.State.size());
+            for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+                String clonedKey = entry.getKey();
+                HashSet<String> clonedValue;
+                if (entry.getValue() != null)
+                    clonedValue = new HashSet<>(entry.getValue());
+                else
+                    clonedValue = new HashSet<>();
+                clonedElement.State.put(clonedKey, clonedValue);
+            }
+            return clonedElement;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
         }
-        System.out.println();
+    }
+
+    @Override
+    public String toString() {
+        if (this.State == null)
+            return "";
+        String ans = "{";
+        int size = this.State.keySet().size();
+
+        for (String key : this.State.keySet()) {
+            if (this.State.get(key) != null) {
+
+                if (this.State.get(key).size() != 0) {
+                    ans += key + " -> ";
+
+                    ans += this.State.get(key).toString() + ((size == 1) ? "" : ", ");
+                    ans += System.lineSeparator();
+                }
+                size--;
+            }
+        }
+
+        return ans + "}";
+    }
+
+    public boolean isEmpty() {
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+            if (entry.getKey().length() != 0 && entry.getValue().size() != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String getAllocationSiteSymbol(Stmt st) {
-        List<Tag> tags = st.getTags();
-        return String.format("new%02d", Integer.parseInt(tags.get(tags.size() - 1).toString()));
+        CustomTag lineNo = (CustomTag) st.getTag("lineNumberTag");
+        CustomTag functionName = (CustomTag) st.getTag("functionName");
+        return String.format("%s.new%02d", functionName.getStringTag(),
+                lineNo.getLineNumber());
     }
 
     @Override
     public LatticeElement join_op(LatticeElement r) {
         Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-         HashSet<String> temp = new HashSet<String>();
 
-        TreeMap<String, HashSet<String>> joinElementState = new TreeMap<String, HashSet<String>>();
+        HashMap<String, HashSet<String>> joinElementState = new HashMap<String, HashSet<String>>();
 
         for (String key : input.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(input.get(key));
-            value.addAll(this.State.getOrDefault(key, temp));
-            joinElementState.put(key , value);
+            value.addAll(this.State.getOrDefault(key, new HashSet<String>()));
+            joinElementState.put(key, value);
         }
-         for (String key : this.State.keySet()) {
+        for (String key : this.State.keySet()) {
             HashSet<String> value = new HashSet<String>();
             value.addAll(this.State.get(key));
-            value.addAll(input.getOrDefault(key, temp));
-                joinElementState.getOrDefault(key , temp);
+            value.addAll(input.getOrDefault(key, new HashSet<String>()));
+            joinElementState.getOrDefault(key, new HashSet<String>());
         }
 
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -93,29 +140,38 @@ public class PointerLatticeElement implements LatticeElement {
 
     @Override
     public boolean equals(LatticeElement r) {
+        return this.State.equals(((PointerLatticeElement) r).State);
+    }
 
-        HashSet<String> temp = new HashSet<String>();
-        Map<String, HashSet<String>> input = ((PointerLatticeElement) r).getState();
-        for (String key : input.keySet()) {
-            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-                return false;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
         }
-        for (String key : this.State.keySet()) {
-            if (!this.State.getOrDefault(key, temp).equals(input.getOrDefault(key, temp)))
-                return false;
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
-        return true;
+        PointerLatticeElement other = (PointerLatticeElement) obj;
+
+        return this.State.equals(other.State);
     }
 
     @Override
     public LatticeElement tf_assignstmt(Stmt st) {
-        LatticeElement result = new PointerLatticeElement(State);
+        if (st instanceof JIdentityStmt) {
 
-        if (st instanceof JAssignStmt) {
+            JIdentityStmt Jst = (JIdentityStmt) st;
+            Value right = Jst.getRightOp();
+            Value left = Jst.getLeftOp();
+            Map<String, HashSet<String>> result = this.clone().getState();
+            result.put(left.toString(), this.State.getOrDefault(right.toString(), new HashSet<>()));
+            return new PointerLatticeElement(result);
+
+        } else if (st instanceof JAssignStmt) {
             return tfAssignmentStmt((AssignStmt) st);
         }
 
-        return result;
+        return this;
     }
 
     /**
@@ -176,6 +232,7 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleFieldAssignmentForLocal(PointerLatticeElement result, Value lhs, Value rhs) {
         HashSet<String> res = new HashSet<>();
         JInstanceFieldRef r = (JInstanceFieldRef) rhs;
+
         for (String pseudoVar : result.State.get(r.getBase().toString())) {
             String key = getSymbolicFieldKey(pseudoVar, r);
             if (pseudoVar == "null" || !result.State.containsKey(key)) {
@@ -201,6 +258,7 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleNonFieldAssignmentForField(AssignStmt st, PointerLatticeElement result, Value lhs,
             Value rhs) {
         JInstanceFieldRef l = (JInstanceFieldRef) lhs;
+
         for (String pseudoVar : result.State.get(l.getBase().toString())) {
             if (pseudoVar == "null") {
                 continue;
@@ -260,11 +318,55 @@ public class PointerLatticeElement implements LatticeElement {
      * @param result PointerLatticeElement whose state needs to be cleared
      * @return Cleared PointerLatticeElement
      */
+    public PointerLatticeElement updateState(String value, HashSet<String> parameter) {
+        Map<String, HashSet<String>> st = getState();
+        st.put(value, parameter);
+        return new PointerLatticeElement(st);
+    }
+
+    public PointerLatticeElement removeFromState() {
+        Map<String, HashSet<String>> st = this.clone().getState();
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+            if (entry.getKey().matches("@parameter.*")) {
+                st.remove(entry.getKey());
+            }
+        }
+        return new PointerLatticeElement(st);
+    }
+
+    public PointerLatticeElement removeFromState(String value) {
+        Map<String, HashSet<String>> st = this.clone().getState();
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+            if (entry.getKey().matches(value)) {
+                st.remove(entry.getKey());
+            }
+        }
+
+        return new PointerLatticeElement(st);
+    }
+    public PointerLatticeElement removeUnwantedReturnVariables(String returnStmtFname, String varToBeMapped) {
+        Map<String, HashSet<String>> st = this.clone().getState();
+        for (Map.Entry<String, HashSet<String>> entry : this.State.entrySet()) {
+            if ((entry.getKey().contains(returnStmtFname) && entry.getKey().contains("::") ) && entry.getKey()!=varToBeMapped) {
+                st.put(entry.getKey(), new HashSet<>());
+            }
+        }
+
+        return new PointerLatticeElement(st);
+    }
+
+
     private PointerLatticeElement clearState(PointerLatticeElement result) {
         for (String key : this.State.keySet()) {
             result.State.get(key).clear();
         }
         return result;
+    }
+
+    public PointerLatticeElement clearState(String var) {
+        if (this.State.containsKey(var))
+            this.State.get(var).clear();
+        return this;
     }
 
     /**
@@ -333,7 +435,8 @@ public class PointerLatticeElement implements LatticeElement {
     private LatticeElement handleTrueBranchWithNull(Value value) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         // send empty if doesn'operation contain null;
-        if (!this.State.get(value.toString()).contains("null")) {
+        // if set is empty also then we dont know what can be the result.
+        if (!this.State.get(value.toString()).contains("null") && !this.State.get(value.toString()).isEmpty()) {
             for (String key : this.State.keySet()) {
                 result.State.get(key).clear();
             }
@@ -460,5 +563,4 @@ public class PointerLatticeElement implements LatticeElement {
         }
         return result;
     }
-
 }
