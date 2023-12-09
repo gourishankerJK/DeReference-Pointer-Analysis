@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import soot.NullType;
 import soot.RefType;
 import soot.Type;
 import soot.Value;
@@ -119,7 +121,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
                 FixedSizeStack<String> callString = entry.getKey().clone();
                 PointerLatticeElement element = entry.getValue().clone();
-                String varToBeMapped="";
+                String varToBeMapped = "";
                 if (st instanceof JReturnStmt) {
                     String retOp = ((JReturnStmt) st).getOp().toString();
 
@@ -127,7 +129,7 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
 
                     CustomTag tag = ((CustomTag) st.getTag("ReturnVars"));
                     if (tag != null) {
-                         varToBeMapped = tag.getReturnVariable(returnEdge);
+                        varToBeMapped = tag.getReturnVariable(returnEdge);
                         if (varToBeMapped != null) {
                             varToBeMapped = tag.getReturnVariable(returnEdge);
                             if (retOp != "null") {
@@ -213,6 +215,12 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
                         exntedPointerLatticeElement = exntedPointerLatticeElement
                                 .updateState("@parameter" + index + ": " + arg.getType(), temp);
 
+                    } else if (isNullType(arg.getType())) {
+                        HashSet<String> temp = new HashSet<>();
+                        Type type = stExpr.getMethod().getParameterType(index);
+                        temp.add("null");
+                        exntedPointerLatticeElement = exntedPointerLatticeElement
+                                .updateState("@parameter" + index + ": " + type, temp);
                     }
                     index++;
                 }
@@ -225,6 +233,10 @@ public class ApproximateCallStringElement implements LatticeElement, Cloneable {
             }
         }
         return new ApproximateCallStringElement(newState);
+    }
+
+    private boolean isNullType(Type type) {
+        return type.equals(NullType.v());
     }
 
     @Override
