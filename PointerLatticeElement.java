@@ -129,7 +129,9 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
             HashSet<String> value = new HashSet<String>();
             value.addAll(this.State.get(key));
             value.addAll(input.getOrDefault(key, new HashSet<String>()));
-            joinElementState.getOrDefault(key, new HashSet<String>());
+            value.addAll(joinElementState.getOrDefault(key, new HashSet<String>()));
+            joinElementState.put(key, value);
+
         }
 
         PointerLatticeElement joinElement = new PointerLatticeElement(joinElementState);
@@ -460,7 +462,7 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
         if (this.State.get(value.toString()).contains("null")) {
             // if it contains only NUll , send \bot
             if (this.State.get(value.toString()).size() == 1) {
-                result = clearState(result);
+                return null;
                 // else filter out null
             } else {
                 result.State.get(value.toString()).removeAll(Collections.singleton("null"));
@@ -486,12 +488,12 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
             result.State.get(right.toString()).retainAll(result.State.get(left.toString()));
             result.State.get(left.toString()).retainAll(result.State.get(right.toString()));
             if (result.State.get(right.toString()).size() == 0) {
-                result = clearState(result);
+                return null;
             }
         } else if (result.State.get(right.toString()).size() == 1 && result.State.get(left.toString()).size() == 1) {
             if (result.State.get(right.toString()).contains("null")
                     && result.State.get(left.toString()).contains("null")) {
-                result = clearState(result);
+                return null;
             }
         }
         return (LatticeElement) result;
@@ -559,7 +561,7 @@ public class PointerLatticeElement implements LatticeElement, Cloneable {
     private LatticeElement handleBothNUll(boolean condition, Value operation) {
         PointerLatticeElement result = new PointerLatticeElement(this.State);
         if ((condition == true && isNEqCond(operation)) || (condition == false && isEqCond(operation))) {
-            result = clearState(result);
+            return null;
         }
         return result;
     }

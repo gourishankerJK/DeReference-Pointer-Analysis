@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class PubTest {
     PubTest f;
 
@@ -139,4 +142,159 @@ public class PubTest {
             v1.f = null;
 
     }
+
+    public static void test25() {
+        PubTest a = new PubTest();
+        PubTest b = new PubTest();
+
+        a.f = null;
+        b.f = null;
+
+        PubTest t = new PubTest();
+
+        testP(a);
+
+        t = a.f;
+
+        System.out.println("t: " + t);
+    }
+
+    public static void testP(PubTest a) {
+        if (a.f != null) {
+            a.f = a;
+            testP(a);
+            a.f = a;
+            PubTest t = a.f;
+
+        } else {
+            a.f = a;
+            return;
+        }
+    }
+
+    static PubTest test101_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test101_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        return new PubTest();
+
+    }
+
+    static PubTest test102_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        test101_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        test102_rec(p1, x, x,
+                new ArrayList<PubTest>());
+
+        return new PubTest();
+
+    }
+
+    static PubTest test103_rec(PubTest p1,
+            int x,
+            int y,
+            List<PubTest> p3) {
+
+        p1 = new PubTest();
+
+        p3 = new ArrayList<PubTest>();
+
+        x = 32;
+
+        for (int i = 0; i < -1; i++) {
+
+            test102_rec(p1, x, x,
+                    new ArrayList<PubTest>());
+
+            test101_rec(p1, x, x,
+                    new ArrayList<PubTest>());
+
+        }
+
+        return new PubTest();
+
+    }
+
+    static PubTest test104_rec_ifelse(PubTest p1) {
+        int x = 32;
+        if (p1 != null) {
+            for (int i = 0; i < x; i++) {
+                x++;
+                x = 43;
+                test104_rec_ifelse(p1);
+            }
+        } else {
+            for (int i = 0; i < 2; i++) {
+                x++;
+
+            }
+            test104_rec_ifelse(p1);
+
+        }
+        return p1;
+    }
+
+    static PubTest test104_rec_switch(PubTest p1) {
+        int x = 32;
+        switch (x) {
+            case 1:
+                x++;
+                x = 43;
+                test104_rec_switch(p1);
+            case 2:
+                test104_rec_switch(p1);
+            default:
+                PubTest t = new PubTest();
+                t.f = null;
+                test104_rec_switch(t);
+        }
+        return p1;
+    }
+    static void test23(int x) {
+        PubTest v1 = new PubTest();
+        if (x <= 10) {
+            v1.f = new PubTest();
+            check_rec(null, null);
+            v1.f = new PubTest();
+        } else {
+            v1.f = new PubTest();
+            check_rec(new PubTest(), null);
+            v1.f = new PubTest();
+        }
+    }
+
+    static void check_rec(PubTest v1, PubTest v2) {
+        if (v1 == v2) {
+            check_rec(v1, v2);
+        }
+        return;
+    }
+
 }

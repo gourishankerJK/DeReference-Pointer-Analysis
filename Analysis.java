@@ -152,8 +152,9 @@ public class Analysis extends PAVBase {
                 if (pp.InfiniteLoop)
                     color = "purple";
                 writeDotFile(fileWriter, Label, s.getLatticeElement().toString().replace("\n", "\\l"), color,
-                        "solid", str, pp.getMethodName(), pp.getStmt().toString(), s.getMethodName(),
-                        s.getStmt().toString());
+                        "solid", str, pp.getMethodName(), pp.getStmt().toString() + pp.getStmt().hashCode(),
+                        s.getMethodName(),
+                        s.getStmt().toString() + s.getStmt().hashCode());
 
             }
         }
@@ -164,16 +165,18 @@ public class Analysis extends PAVBase {
                 writeDotFile(fileWriter, Label,
                         pp.callEdgeId + "\\l\\l" + pp.callSuccessor.getLatticeElement().toString().replace("\n", "\\l"),
                         color, "dashed", str,
-                        pp.getMethodName(), pp.getStmt().toString(), pp.callSuccessor.getMethodName(),
-                        pp.callSuccessor.getStmt().toString());
+                        pp.getMethodName(), pp.getStmt().toString() + pp.getStmt().hashCode(),
+                        pp.callSuccessor.getMethodName(),
+                        pp.callSuccessor.getStmt().toString() + pp.callSuccessor.getStmt().hashCode());
             }
 
             int k = 0;
             for (ProgramPoint returnPoints : pp.returnSuccessors) {
                 String color = returnPoints.isMarked() ? "red" : "black";
                 writeDotFile(fileWriter, Label, pp.returnEdgeIds.get(k), color, "dashed", str,
-                        pp.getMethodName(), pp.getStmt().toString(), returnPoints.getMethodName(),
-                        returnPoints.getStmt().toString());
+                        pp.getMethodName(), pp.getStmt().toString() + pp.getStmt().hashCode(),
+                        returnPoints.getMethodName(),
+                        returnPoints.getStmt().toString() + returnPoints.getStmt().hashCode());
                 k++;
             }
         }
