@@ -84,7 +84,6 @@ public class ApproximateCallStringPreProcess {
             if (st instanceof JReturnStmt || st instanceof JReturnVoidStmt)
                 return false;
             else {
-
                 if (st.containsInvokeExpr() && st.getInvokeExpr() instanceof StaticInvokeExpr
                         && !isParentCondtional(st, cfg)) {
                     // jth statement is not recursive
